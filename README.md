@@ -28,9 +28,13 @@ Stop the stack with `Ctrl+C`, then `docker compose down`. The named database vol
 
 ## Run against an existing local MySQL server
 
-Run `Common_Backend/database/schema.sql` once in MySQL Workbench or with `mysql -u root -p < Common_Backend/database/schema.sql`. Copy `Common_Backend/.env.example` to `Common_Backend/.env`, enter the database credentials and a long `JWT_SECRET`, then start the backend from `Common_Backend` with `npm install` and `npm run dev`.
+1. Open `Common_Backend/database/schema.sql` in MySQL Workbench and run it. It creates the tables inside `TransportHub_Complete`.
+2. In PowerShell, run `Copy-Item Common_Backend/.env.example Common_Backend/.env`, then edit `Common_Backend/.env` and set your MySQL username/password and a private `JWT_SECRET`.
+3. In a terminal at `Common_Backend`, run `npm install`, then `npm run create-admin` once to create the admin login, then `npm run dev` to start the API.
 
-For the web apps, run `npm install` and `npm run dev` from each of `Admin-Module`, `Customer-module`, and `Transporter-Module`. Each Vite terminal prints the URL to open.
+4. Open separate terminals for `Admin-Module`, `Customer-module`, and `Transporter-Module`; run `npm install` and `npm run dev` in each folder.
+
+Open Admin at http://localhost:5173, Customer at http://localhost:5174, Transporter at http://localhost:5175, API health at http://localhost:5000/api/health, and database health at http://localhost:5000/api/health/database. The frontend ports are fixed so CORS and login cookies work consistently.
 
 ## Main tables
 
