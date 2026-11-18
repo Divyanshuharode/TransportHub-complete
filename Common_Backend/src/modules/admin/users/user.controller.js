@@ -40,7 +40,9 @@ const deleteuser = (req, res, next) => {
 };
 
 const updateStatus = (req, res, next) => {
-    updateStatusModel(req.params.user_id, req.body.account_status, (err, result) => {
+    const status = String(req.body.account_status || "").toUpperCase();
+    if (!["ACTIVE", "INACTIVE"].includes(status)) return res.status(400).json({ success: false, message: "Status must be ACTIVE or INACTIVE", data: null });
+    updateStatusModel(req.params.user_id, status, (err, result) => {
         if (err) return next(err);
         if (result?.protectedAdmin) {
             return res.status(403).send({ success: false, message: "SUPER_ADMIN account status cannot be changed", data: null });
@@ -57,12 +59,19 @@ const getusersById = (req, res, next) => {
     });
 };
 
-const updateuser = (req, res, next) => {
-    updateUserModel(req.params.user_id, req.body, (err, result) => {
+const updateuser = async (req, res, next) => {
+    const { full_name, email, role_id, password } = req.body;
+    if (!full_name?.trim() || !email?.trim() || !role_id) return res.status(400).json({ success: false, message: "Name, email and role are required", data: null });
+    if (password && password.length < 8) return res.status(400).json({ success: false, message: "New password must be at least 8 characters", data: null });
+    try {
+        const data = { full_name, email, role_id, password: password ? await bcrypt.hash(password, 10) : null };
+        updateUserModel(req.params.user_id, data, (err, result) => {
         if (err) return next(err);
         if (!result.affectedRows) return res.status(404).send({ success: false, message: "User not found", data: null });
         res.send({ success: true, message: "User updated successfully", data: result });
-    });
+        });
+    } catch (error) { next(error); }
 };
 
 module.exports = { getusers, adduser, deleteuser, updateStatus, getusersById, updateuser };
+
