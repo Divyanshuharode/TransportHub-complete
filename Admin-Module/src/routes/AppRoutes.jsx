@@ -13,6 +13,7 @@ import Bookings from "../pages/Bookings/Bookings";
 import Login from "../pages/Login/Login";
 import Settings from "../pages/Setting/Settings";
 import Reviews from "../pages/Reviews/Reviews";
+import Documents from "../pages/Documents/Documents";
 import ProtectedRoute from "./ProtectedRoute";
 
 export default function AppRoutes() {
@@ -41,6 +42,7 @@ export default function AppRoutes() {
 
                     <Route path="bookings" element={<Bookings />} />
                     <Route path="reviews" element={<Reviews />} />
+                    <Route path="documents" element={<Documents />} />
 
                     <Route path="settings" element={<Settings />} />
 
@@ -50,3 +52,4 @@ export default function AppRoutes() {
         </BrowserRouter>
     );
 }
+
