@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
+import { Menu } from "lucide-react";
 import adminStore from "../../store/admin.store";
 import { logoutAdmin } from "../../services/auth.service";
 
-function Navbar() {
+function Navbar({ onMenuClick }) {
     const navigate = useNavigate();
 
     const { logOut } = adminStore();
@@ -14,14 +15,15 @@ function Navbar() {
 
     return (
         <header className="flex min-h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 sm:px-6">
-            <div>
+            <div className="flex items-center gap-3">
+                <button onClick={onMenuClick} className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" aria-label="Open navigation"><Menu size={21}/></button>
+                <div>
                 <h1 className="text-sm font-semibold text-slate-800">Admin Panel</h1>
                 <p className="text-xs text-slate-500">Welcome back, Admin</p>
+                </div>
             </div>
 
             <div className="flex items-center gap-3">
-                <input type="text" placeholder="Search..." className="hidden w-52 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 sm:block" />
-
                 <button onClick={logout} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700">
                     Logout
                 </button>
@@ -31,3 +33,4 @@ function Navbar() {
 }
 
 export default Navbar;
+
