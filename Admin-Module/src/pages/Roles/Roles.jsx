@@ -43,20 +43,20 @@ export default function Roles() {
         fetchRoles();
     }, []);
 
-    const addRole = async () => {
+    const addRole = async (roleName = rname) => {
         try {
-            await addRoleApi({ role_name: rname });
+            await addRoleApi({ role_name: roleName });
             await Swal.fire({
                 icon: "success",
                 title: "role added successfully",
                 text: "view roleList",
                 confirmButtonText: "ok",
             })
-            fetchRoles();
+            await fetchRoles();
             setrname("");
             setOpen(false);
         } catch (err) {
-            console.log(err);
+            await Swal.fire({ icon: "error", title: "Role could not be added", text: err.response?.data?.message || "Please check the role name and try again." });
         }
     };
 
@@ -75,11 +75,11 @@ export default function Roles() {
                 text: "view roleList",
                 confirmButtonText: "ok",
             })
-            fetchRoles();
+            await fetchRoles();
             setOpenUpdate(false);
             setRname("");
         } catch (err) {
-            console.log(err);
+            await Swal.fire({ icon: "error", title: "Role could not be updated", text: err.response?.data?.message || "Please try again." });
         }
     };
 
@@ -149,3 +149,4 @@ export default function Roles() {
         </div>
     );
 }
+
