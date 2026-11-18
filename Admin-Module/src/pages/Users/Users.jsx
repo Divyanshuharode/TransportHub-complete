@@ -48,6 +48,7 @@ export default function Users() {
 
     const openmodal = () => {
         fetchRoles();
+        setname(""); setemail(""); setpass(""); setRole("");
         setOpen(true);
     };
 
@@ -57,7 +58,7 @@ export default function Users() {
             const res = await getUsers();
             setUsers(res.data.data);
         } catch (err) {
-            console.log(err);
+            await Swal.fire({ icon: "error", title: "User could not be added", text: err.response?.data?.message || "Please check the details and try again." });
         }
     };
 
@@ -67,7 +68,7 @@ export default function Users() {
             const res = await getRoles();
             setallRoles(res.data.data);
         } catch (err) {
-            console.log(err);
+            await Swal.fire({ icon: "error", title: "User could not be deactivated", text: err.response?.data?.message || "Please try again." });
         }
     };
 
@@ -114,13 +115,13 @@ export default function Users() {
 
     // UPDATE status
     const updateStatusHandler = async (item) => {
-        const newStatus = item.account_status === "Active" ? "Inactive" : "Active";
+        const newStatus = String(item.account_status).toUpperCase() === "ACTIVE" ? "INACTIVE" : "ACTIVE";
 
         try {
             await updateUserStatus(item.user_id, { account_status: newStatus });
             await fetchUsers();
         } catch (err) {
-            console.log(err);
+            await Swal.fire({ icon: "error", title: "Status could not be changed", text: err.response?.data?.message || "Please try again." });
         }
     };
 
@@ -158,7 +159,7 @@ export default function Users() {
             await fetchUsers();
             setUpdateOpen(false);
         } catch (err) {
-            console.log(err);
+            await Swal.fire({ icon: "error", title: "User could not be updated", text: err.response?.data?.message || "Please try again." });
         }
     };
     // ------ filter ---
@@ -166,15 +167,15 @@ export default function Users() {
     const filteredUsers = users.filter((item) => {
         const matchesSearch = (item.full_name + item.email).toLowerCase().includes(search.toLowerCase());
         // const matchesRole = roleFilter === "" || String(item.role_id) === roleFilter;
-        const matchesStatus = statusFilter === "" || item.account_status === statusFilter;
+        const matchesStatus = statusFilter === "" || String(item.account_status).toUpperCase() === statusFilter.toUpperCase();
 
         return matchesSearch && matchesStatus;
     });
     // ------ users cards value 
     const totalUsers = users.length;
 
-    const activeUsers = users.filter(item => item.account_status === "Active").length;
-    const inactiveUsers = users.filter(item => item.account_status === "Inactive").length;
+    const activeUsers = users.filter(item => String(item.account_status).toUpperCase() === "ACTIVE").length;
+    const inactiveUsers = users.filter(item => String(item.account_status).toUpperCase() === "INACTIVE").length;
 
     // DataTable columns
     const columns = [
@@ -203,9 +204,9 @@ export default function Users() {
                     <button
                         type="button"
                         onClick={() => updateStatusHandler(item)}
-                        className={`relative flex h-5.5 w-10 shrink-0 items-center rounded-full transition-colors duration-300 ${item.account_status === "Active" ? "bg-blue-600" : "bg-slate-300"}`}
+                        className={`relative flex h-5.5 w-10 shrink-0 items-center rounded-full transition-colors duration-300 ${String(item.account_status).toUpperCase() === "ACTIVE" ? "bg-blue-600" : "bg-slate-300"}`}
                     >
-                        <span className={`absolute left-0.9 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300 ${item.account_status === "Active" ? "translate-x-5" : "translate-x-0"}`} />
+                        <span className={`absolute left-0.9 h-5 w-5 rounded-full bg-white shadow transition-transform duration-300 ${String(item.account_status).toUpperCase() === "ACTIVE" ? "translate-x-5" : "translate-x-0"}`} />
                     </button>
                 </div>
             )
@@ -306,8 +307,8 @@ export default function Users() {
 
                     <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                         <option value="">All statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="INACTIVE">Inactive</option>
                     </select>
 
                     <input
@@ -372,3 +373,4 @@ export default function Users() {
         </div>
     );
 }
+
