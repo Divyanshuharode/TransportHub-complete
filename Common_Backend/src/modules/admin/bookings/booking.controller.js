@@ -8,7 +8,7 @@ function getBookings(req, res, next) {
     bookingModel.listAdminBookings(status, (err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
 }
 
-const getReviews = (req, res, next) => bookingRepository.getAdminReviews((err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
+const getReviews = (req, res, next) => { bookingRepository.getAdminReviews((err, rows) => err ? next(err) : res.json({ success: true, data: rows })); };
 
 async function updateBookingStatus(req, res, next) {
     const status = String(req.body.status || "").toUpperCase();

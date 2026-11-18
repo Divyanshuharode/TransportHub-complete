@@ -1,8 +1,8 @@
 const generateUUID = require("../../../utility/uuid");
 const bookings = require("../../shared/booking.model");
 
-const listMyBookings = (req, res, next) => bookings.listCustomerBookings(req.customerId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
-const getBookingHistory = (req, res, next) => bookings.getBookingHistory(req.params.booking_id, req.customerId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
+const listMyBookings = (req, res, next) => { bookings.listCustomerBookings(req.customerId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows })); };
+const getBookingHistory = (req, res, next) => { bookings.getBookingHistory(req.params.booking_id, req.customerId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows })); };
 
 async function createBooking(req, res, next) {
     const { pickup_location, delivery_location, goods_type, weight_tonnes, vehicle_type, pickup_date, customer_note } = req.body;

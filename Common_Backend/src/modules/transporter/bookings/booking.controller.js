@@ -42,8 +42,8 @@ function listReviews(req, res, next) {
     });
 }
 
-const listRequests = (req, res, next) => bookings.listTransporterRequests(req.transporterId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
-const listMyBookings = (req, res, next) => bookings.listTransporterBookings(req.transporterId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
+const listRequests = (req, res, next) => { bookings.listTransporterRequests(req.transporterId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows })); };
+const listMyBookings = (req, res, next) => { bookings.listTransporterBookings(req.transporterId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows })); };
 
 async function respondToRequest(req, res, next) {
     try {

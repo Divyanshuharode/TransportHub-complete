@@ -32,7 +32,9 @@ const publicReviewRoutes = require("./modules/reviews/review.routes");
 const adminInventoryRoutes = require("./modules/admin/inventory/inventory.routes");
 
 app.get("/api/health", (req, res) => res.json({ success: true, message: "TransportHub API is running" }));
-app.get("/api/health/database", (req, res, next) => connection.query("SELECT 1 AS connected", (error) => error ? next(error) : res.json({ success: true, message: "Database connected" })));
+app.get("/api/health/database", (req, res, next) => {
+    connection.query("SELECT 1 AS connected", (error) => error ? next(error) : res.json({ success: true, message: "Database connected" }));
+});
 app.use("/", adminAuthRoutes);
 app.use("/", customerAuthRoutes, customerProfileRoutes, customerBookingRoutes);
 app.use("/", publicReviewRoutes);

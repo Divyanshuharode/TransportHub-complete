@@ -7,7 +7,7 @@ function validateDriver(body) {
     return null;
 }
 
-const listDrivers = (req, res, next) => drivers.listDriversModel(req.transporterId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows }));
+const listDrivers = (req, res, next) => { drivers.listDriversModel(req.transporterId, (err, rows) => err ? next(err) : res.json({ success: true, data: rows })); };
 const addDriver = (req, res, next) => {
     const error = validateDriver(req.body);
     if (error) return res.status(400).json({ success: false, message: error });
@@ -23,10 +23,10 @@ const updateDriver = (req, res, next) => {
         res.json({ success: true, message: "Driver updated" });
     });
 };
-const deleteDriver = (req, res, next) => drivers.deleteDriverModel(req.params.driver_id, req.transporterId, (err, result) => {
+const deleteDriver = (req, res, next) => { drivers.deleteDriverModel(req.params.driver_id, req.transporterId, (err, result) => {
     if (err) return next(err);
     if (!result.affectedRows) return res.status(404).json({ success: false, message: "Driver not found" });
     res.json({ success: true, message: "Driver deleted" });
-});
+}); };
 
 module.exports = { listDrivers, addDriver, updateDriver, deleteDriver };

@@ -5,7 +5,7 @@ const connection = require("../../../config/db");
 const router = express.Router();
 router.get("/api/transporter/profile", getProfile);
 router.patch("/api/transporter/profile", updateProfile);
-router.get("/api/transporter/settings", (req, res, next) => connection.query("SELECT setting_key, setting_value FROM app_settings WHERE owner_type = 'TRANSPORTER' AND owner_id = ?", [req.transporterId], (err, rows) => err ? next(err) : res.json({ success: true, data: rows })));
+router.get("/api/transporter/settings", (req, res, next) => { connection.query("SELECT setting_key, setting_value FROM app_settings WHERE owner_type = 'TRANSPORTER' AND owner_id = ?", [req.transporterId], (err, rows) => err ? next(err) : res.json({ success: true, data: rows })); });
 router.put("/api/transporter/settings", (req, res, next) => {
     const allowed = ["bookingAlerts", "paymentAlerts", "weeklySummary", "publicProfile"];
     const entries = Object.entries(req.body || {});
