@@ -11,7 +11,7 @@ function RoleAddModal({ open, setOpen, rname, setrname, addRole }) {
         }),
         onSubmit: (values) => {
             setrname(values.rname.trim());
-            addRole();
+            addRole(values.rname.trim());
         },
     });
 
@@ -46,3 +46,4 @@ function RoleAddModal({ open, setOpen, rname, setrname, addRole }) {
 }
 
 export default RoleAddModal;
+
