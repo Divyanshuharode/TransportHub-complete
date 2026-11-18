@@ -9,5 +9,7 @@ const vehiclesCountModel = (transporterId, cbfn) => connection.query(`SELECT COU
     COALESCE(SUM(status = 'INACTIVE'), 0) AS inactiveVehicles
     FROM vehicles WHERE transporter_id = ?`, [transporterId], cbfn);
 const deleteVehiclesModel = (vehicle_id, transporterId, cbfn) => connection.query("DELETE FROM vehicles WHERE vehicle_id = ? AND transporter_id = ?", [vehicle_id, transporterId], cbfn);
+const updateVehicleModel = (vehicleId, transporterId, data, cbfn) => connection.query("UPDATE vehicles SET vehicle_number = ?, vehicle_type = ?, capacity = ?, status = ? WHERE vehicle_id = ? AND transporter_id = ?", [data.vehicle_number, data.vehicle_type, data.capacity, data.status, vehicleId, transporterId], cbfn);
 
-module.exports = { addVehicleModel, getVehicleModel, vehiclesCountModel, deleteVehiclesModel };
+module.exports = { addVehicleModel, getVehicleModel, vehiclesCountModel, deleteVehiclesModel, updateVehicleModel };
+
