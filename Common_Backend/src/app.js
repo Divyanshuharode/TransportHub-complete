@@ -21,6 +21,7 @@ const transporterVehicleRoutes = require("./modules/transporter/vehicles/vehicle
 const transporterDriverRoutes = require("./modules/transporter/drivers/driver.routes");
 const transporterBookingRoutes = require("./modules/transporter/bookings/booking.routes");
 const transporterProfileRoutes = require("./modules/transporter/profile/profile.routes");
+const transporterDocumentRoutes = require("./modules/transporter/documents/document.routes");
 const adminRoleRoutes = require("./modules/admin/roles/role.routes");
 const adminRoleAssignRoutes = require("./modules/admin/roles/roleAssign.routes");
 const adminUserRoutes = require("./modules/admin/users/user.routes");
@@ -30,6 +31,7 @@ const adminTransporterRoutes = require("./modules/admin/transporters/transporter
 const adminBookingRoutes = require("./modules/admin/bookings/booking.routes");
 const publicReviewRoutes = require("./modules/reviews/review.routes");
 const adminInventoryRoutes = require("./modules/admin/inventory/inventory.routes");
+const adminDocumentRoutes = require("./modules/admin/documents/document.routes");
 
 app.get("/api/health", (req, res) => res.json({ success: true, message: "TransportHub API is running" }));
 app.get("/api/health/database", (req, res, next) => {
@@ -39,8 +41,9 @@ app.use("/", adminAuthRoutes);
 app.use("/", customerAuthRoutes, customerProfileRoutes, customerBookingRoutes);
 app.use("/", publicReviewRoutes);
 app.use("/", transporterAuthRoutes);
-app.use("/", transporterAuthMiddleware, transporterVehicleRoutes, transporterDriverRoutes, transporterBookingRoutes, transporterProfileRoutes);
-app.use("/", adminAuthMiddleware, adminRoleRoutes, adminRoleAssignRoutes, adminUserRoutes, adminDashboardRoutes, adminCustomerRoutes, adminTransporterRoutes, adminBookingRoutes, adminInventoryRoutes);
+app.use("/", transporterAuthMiddleware, transporterVehicleRoutes, transporterDriverRoutes, transporterBookingRoutes, transporterProfileRoutes, transporterDocumentRoutes);
+app.use("/", adminAuthMiddleware, adminRoleRoutes, adminRoleAssignRoutes, adminUserRoutes, adminDashboardRoutes, adminCustomerRoutes, adminTransporterRoutes, adminBookingRoutes, adminInventoryRoutes, adminDocumentRoutes);
 app.use(errorMiddleware);
 
 module.exports = app;
+
