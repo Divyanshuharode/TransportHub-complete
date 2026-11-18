@@ -1,7 +1,7 @@
 const connection = require("../../../config/db");
 
 const getUsersModel = (cbfn) => {
-    const query = "SELECT user_id, full_name, email, account_status, created_at FROM users ORDER BY created_at DESC";
+    const query = "SELECT u.user_id, u.full_name, u.email, u.account_status, u.created_at, ra.role_id, r.role_name FROM users u LEFT JOIN role_assign ra ON ra.user_id = u.user_id LEFT JOIN roles r ON r.role_id = ra.role_id ORDER BY u.created_at DESC";
     connection.query(query, cbfn);
 };
 
@@ -49,8 +49,19 @@ const getUserByIdModel = (user_id, cbfn) => {
 };
 
 const updateUserModel = (user_id, data, cbfn) => {
-    const query = "UPDATE users SET full_name = UPPER(?), email = ? WHERE user_id = ?";
-    connection.query(query, [data.full_name, data.email, user_id], cbfn);
+    const fields = ["full_name = ?", "email = ?"];
+    const params = [data.full_name.trim(), data.email.trim().toLowerCase()];
+    if (data.password) { fields.push("password = ?"); params.push(data.password); }
+    params.push(user_id);
+    connection.query(`UPDATE users SET ${fields.join(", ")} WHERE user_id = ?`, params, (err, result) => {
+        if (err || !result.affectedRows || !data.role_id) return cbfn(err, result);
+        connection.query("UPDATE role_assign SET role_id = ? WHERE user_id = ?", [data.role_id, user_id], (roleErr, roleResult) => {
+            if (roleErr) return cbfn(roleErr);
+            if (roleResult.affectedRows) return cbfn(null, result);
+            connection.query("INSERT INTO role_assign (user_id, role_id) VALUES (?, ?)", [user_id, data.role_id], (insertErr) => cbfn(insertErr, result));
+        });
+    });
 };
 
 module.exports = { getUsersModel, addUserModel, assignRoleModel, deleteUserModel, updateStatusModel, getUserByIdModel, updateUserModel };
+
