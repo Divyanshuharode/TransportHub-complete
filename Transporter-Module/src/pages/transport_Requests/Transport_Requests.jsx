@@ -8,6 +8,7 @@ const Transport_Requests = () => {
     const [requests, setRequests] = useState([]);
     const [filter, setFilter] = useState("All Status");
     const [error, setError] = useState("");
+    const [selected, setSelected] = useState(null);
     useEffect(() => { getBookingRequestsApi().then(({ data }) => setRequests(data.data.map(mapRequest))).catch((requestError) => setError(requestError.response?.data?.message || "Could not load booking requests.")); }, []);
     async function updateStatus(id, status) { setError(""); try { await respondToBookingApi(id, status === "Accepted" ? "ACCEPTED" : "REJECTED"); const { data } = await getBookingRequestsApi(); setRequests(data.data.map(mapRequest)); } catch (requestError) { setError(requestError.response?.data?.message || "Could not update this request."); } }
     const visibleRequests = requests.filter((item) => filter === "All Status" || item.status === filter);
@@ -95,7 +96,7 @@ const Transport_Requests = () => {
                                     </td>
                                     <td className="whitespace-nowrap px-4 py-4">
                                         <div className="flex items-center gap-2">
-                                            <button title="View Details" className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-100">
+                                            <button onClick={() => setSelected(request)} title="View Details" className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-100">
                                                 <Eye size={16} />
                                             </button>
 
@@ -118,8 +119,11 @@ const Transport_Requests = () => {
                 </div>
             </div>
 
+            {selected && <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(event) => event.target === event.currentTarget && setSelected(null)}><div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-5 text-white"><div><p className="text-xs font-semibold uppercase tracking-widest text-blue-100">Booking request</p><h2 className="mt-1 text-lg font-bold">{selected.id}</h2></div><button onClick={() => setSelected(null)} className="rounded-lg px-3 py-2 text-xl hover:bg-white/15" aria-label="Close">×</button></div><div className="grid gap-4 p-6 sm:grid-cols-2">{[["Customer",selected.customer],["Trip date",selected.date || "Not set"],["Pickup",selected.pickup],["Delivery",selected.drop],["Vehicle requested",selected.vehicle || "Not specified"],["Quoted amount",selected.amount]].map(([label,value])=><div key={label} className="rounded-xl border border-slate-100 bg-slate-50 p-4"><p className="text-xs font-medium text-slate-500">{label}</p><p className="mt-1 break-words font-semibold text-slate-900">{value || "—"}</p></div>)}</div><div className="flex justify-end border-t border-slate-100 px-6 py-4"><button onClick={() => setSelected(null)} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white">Close</button></div></div></div>}
+
         </div>
     );
 };
 
 export default Transport_Requests;
+
