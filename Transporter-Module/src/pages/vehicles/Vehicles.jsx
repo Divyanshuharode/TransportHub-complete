@@ -1,89 +1,43 @@
-import { useState, useEffect } from "react";
-import { Truck, Plus, Edit, Trash2, Eye } from "lucide-react";
-import { getVehiclesApi } from "../../services/vehicles.service";
-import VehicleCards from "./Vehicles.cards";
+import { useCallback, useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Edit, LoaderCircle, Plus, Trash2, Truck, X } from "lucide-react";
+import { addVehicleApi, deleteVehicleApi, getVehiclesApi, updateVehicleApi } from "../../services/vehicles.service";
 import VehicleDetailsModal from "./Vehicles.viewModel";
 
+const emptyForm = { vehicle_number: "", vehicle_type: "", capacity: "", status: "AVAILABLE" };
+const statusStyle = { AVAILABLE: "bg-emerald-50 text-emerald-700 ring-emerald-600/20", ON_TRIP: "bg-blue-50 text-blue-700 ring-blue-600/20", MAINTENANCE: "bg-amber-50 text-amber-700 ring-amber-600/20", INACTIVE: "bg-gray-100 text-gray-600 ring-gray-500/20" };
+
+function VehicleFormModal({ vehicle, onClose, onSave }) {
+    const [form, setForm] = useState(vehicle ? { vehicle_number: vehicle.vehicle_number || "", vehicle_type: vehicle.vehicle_type || "", capacity: vehicle.capacity || "", status: String(vehicle.status || "AVAILABLE").toUpperCase() } : emptyForm);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    const submit = async (event) => { event.preventDefault(); setError(""); setSaving(true); try { await onSave(form); onClose(); } catch (err) { setError(err.response?.data?.message || "Vehicle save nahi ho payi. Details check karke dobara try karein."); } finally { setSaving(false); } };
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={(e) => e.target === e.currentTarget && onClose()}><form onSubmit={submit} className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex items-center justify-between bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-5 text-white"><div><h2 className="text-lg font-bold">{vehicle ? "Edit vehicle" : "Add vehicle"}</h2><p className="mt-1 text-sm text-blue-100">Apne fleet ki vehicle details bharein.</p></div><button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-white/15" aria-label="Close"><X size={20}/></button></div>
+        <div className="space-y-4 p-6"><label className="block text-sm font-medium text-slate-700">Vehicle number<input required maxLength={30} value={form.vehicle_number} onChange={(e) => setForm({ ...form, vehicle_number: e.target.value })} placeholder="e.g. DL 01 AB 1234" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"/></label><label className="block text-sm font-medium text-slate-700">Vehicle type<input required maxLength={80} value={form.vehicle_type} onChange={(e) => setForm({ ...form, vehicle_type: e.target.value })} placeholder="e.g. 14 ft truck" className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"/></label><div className="grid gap-4 sm:grid-cols-2"><label className="block text-sm font-medium text-slate-700">Capacity (tons)<input required type="number" min="0.1" step="0.1" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"/></label>{vehicle && <label className="block text-sm font-medium text-slate-700">Status<select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 outline-none focus:border-blue-500"><option value="AVAILABLE">Available</option><option value="MAINTENANCE">Maintenance</option><option value="INACTIVE">Inactive</option></select></label>}</div>{error && <p role="alert" className="flex items-center gap-2 rounded-xl bg-red-50 p-3 text-sm text-red-700"><AlertCircle size={17}/>{error}</p>}</div>
+        <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4"><button type="button" onClick={onClose} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600">Cancel</button><button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60">{saving && <LoaderCircle className="animate-spin" size={16}/>} {vehicle ? "Save changes" : "Add vehicle"}</button></div>
+    </form></div>;
+}
+
 const Vehicles = () => {
-    const [vehicless, setVehicles] = useState([]);
+    const [vehicles, setVehicles] = useState([]);
     const [selectedVehicle, setSelectedVehicle] = useState(null);
-
-    const getVehicleInfo = async () => {
-        const res = await getVehiclesApi();
-        // const
-        setVehicles(res.data.data);
-        console.log(res.data.data);
-    };
-
-    useEffect(() => {
-        getVehicleInfo();
-    }, []);
-
-    return (
-        <div className="space-y-2 p-1">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-xl font-bold text-gray-900">My Vehicles</h1>
-                </div>
-                <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">
-                    <Plus size={18} /> Add Vehicle
-                </button>
-            </div>
-
-            <VehicleCards />
-
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-200 p-5">
-                    <h2 className="text-lg font-semibold text-gray-900">Vehicle List</h2>
-                    <p className="mt-1 text-sm text-gray-500">View your registered vehicles and their status.</p>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-                            <tr>
-                                <th className="px-5 py-4">Vehicle Number</th>
-                                <th className="px-5 py-4">Vehicle Type</th>
-                                <th className="px-5 py-4">Capacity</th>
-                                <th className="px-5 py-4">Status</th>
-                                <th className="px-5 py-4">Actions</th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-gray-100">
-                            {vehicless.map((vehicle) => (
-                                <tr key={vehicle.vehicle_id} className="hover:bg-gray-50">
-                                    <td className="px-5 py-4 font-medium text-gray-600">{vehicle.vehicle_number}</td>
-                                    <td className="px-5 py-4 text-gray-600">{vehicle.vehicle_type}</td>
-                                    <td className="px-5 py-4 text-gray-600">{vehicle.capacity}</td>
-                                    <td className="px-5 py-4">
-                                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${vehicle.status === "Available" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}`}>
-                                            {vehicle.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <button onClick={() => setSelectedVehicle(vehicle)} className="text-blue-600" title="View Details">
-                                                <Eye size={17} />
-                                            </button>
-                                            <button className="text-blue-600" title="Edit">
-                                                <Edit size={17} />
-                                            </button>
-                                            <button className="text-red-500" title="Delete">
-                                                <Trash2 size={17} />
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <VehicleDetailsModal vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)} />
-        </div>
-    );
+    const [editingVehicle, setEditingVehicle] = useState(null);
+    const [adding, setAdding] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [notice, setNotice] = useState("");
+    const loadVehicles = useCallback(async () => { setLoading(true); setError(""); try { const res = await getVehiclesApi(); setVehicles(res.data.data || []); } catch (err) { setError(err.response?.data?.message || "Vehicles load nahi ho payi. Backend connection check karein."); } finally { setLoading(false); } }, []);
+    useEffect(() => { loadVehicles(); }, [loadVehicles]);
+    const saveVehicle = async (form) => { if (editingVehicle) await updateVehicleApi(editingVehicle.vehicle_id, form); else await addVehicleApi(form); setNotice(editingVehicle ? "Vehicle details update ho gayi." : "Vehicle fleet mein add ho gayi."); await loadVehicles(); };
+    const removeVehicle = async (vehicle) => { if (!window.confirm(`${vehicle.vehicle_number} ko fleet se delete karein?`)) return; try { await deleteVehicleApi(vehicle.vehicle_id); setNotice("Vehicle delete ho gayi."); await loadVehicles(); } catch (err) { setError(err.response?.data?.message || "Vehicle delete nahi ho payi."); } };
+    const counts = { total: vehicles.length, available: vehicles.filter(v => String(v.status).toUpperCase() === "AVAILABLE").length, onTrip: vehicles.filter(v => String(v.status).toUpperCase() === "ON_TRIP").length, maintenance: vehicles.filter(v => String(v.status).toUpperCase() === "MAINTENANCE").length };
+    return <div className="space-y-6 p-3 sm:p-5 lg:p-7">
+        <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold text-blue-600">FLEET MANAGEMENT</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">My Vehicles</h1><p className="mt-1 text-sm text-slate-500">Fleet, availability aur vehicle details ek jagah manage karein.</p></div><button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:-translate-y-0.5 hover:bg-blue-700"><Plus size={18}/> Add vehicle</button></div>
+        {notice && <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><span className="flex items-center gap-2"><CheckCircle2 size={17}/>{notice}</span><button onClick={() => setNotice("")}><X size={16}/></button></div>}{error && <div className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><span className="flex items-center gap-2"><AlertCircle size={17}/>{error}</span><button onClick={() => setError("")}><X size={16}/></button></div>}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[["Total vehicles",counts.total,"Your registered fleet","text-blue-600","bg-blue-50"],["Available",counts.available,"Ready for a booking","text-emerald-600","bg-emerald-50"],["On trip",counts.onTrip,"Currently assigned","text-indigo-600","bg-indigo-50"],["Maintenance",counts.maintenance,"Temporarily unavailable","text-amber-600","bg-amber-50"]].map(([title,count,desc,color,bg])=><div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between"><span className="text-sm font-medium text-slate-500">{title}</span><span className={`rounded-xl p-2.5 ${bg} ${color}`}><Truck size={19}/></span></div><p className="mt-3 text-3xl font-bold text-slate-900">{count}</p><p className="mt-1 text-xs text-slate-500">{desc}</p></div>)}</div>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-5"><div><h2 className="font-semibold text-slate-900">Fleet vehicles</h2><p className="mt-1 text-sm text-slate-500">{vehicles.length} registered vehicle{vehicles.length === 1 ? "" : "s"}</p></div><button onClick={loadVehicles} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Refresh</button></div><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-5 py-4">Vehicle</th><th className="px-5 py-4">Type</th><th className="px-5 py-4">Capacity</th><th className="px-5 py-4">Status</th><th className="px-5 py-4 text-right">Actions</th></tr></thead><tbody className="divide-y divide-slate-100">{loading ? <tr><td colSpan="5" className="py-16 text-center text-slate-500"><LoaderCircle className="mx-auto mb-2 animate-spin"/>Loading fleet…</td></tr> : vehicles.length === 0 ? <tr><td colSpan="5" className="px-5 py-16 text-center"><Truck className="mx-auto mb-3 text-slate-300" size={34}/><p className="font-semibold text-slate-800">Abhi koi vehicle add nahi hai</p><p className="mt-1 text-sm text-slate-500">Add vehicle button se apni fleet shuru karein.</p></td></tr> : vehicles.map((vehicle) => { const status = String(vehicle.status || "AVAILABLE").toUpperCase(); return <tr key={vehicle.vehicle_id} className="transition hover:bg-slate-50/80"><td className="px-5 py-4"><div className="font-semibold text-slate-900">{vehicle.vehicle_number}</div><div className="mt-0.5 text-xs text-slate-400">ID: {String(vehicle.vehicle_id).slice(0,8)}</div></td><td className="px-5 py-4 text-slate-600">{vehicle.vehicle_type}</td><td className="px-5 py-4 text-slate-600">{vehicle.capacity} tons</td><td className="px-5 py-4"><span className={`rounded-full px-3 py-1.5 text-xs font-semibold ring-1 ring-inset ${statusStyle[status] || statusStyle.INACTIVE}`}>{status.replaceAll("_"," ")}</span></td><td className="px-5 py-4"><div className="flex justify-end gap-1"><button onClick={() => setSelectedVehicle(vehicle)} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-700" title="View details"><Truck size={17}/></button><button onClick={() => setEditingVehicle(vehicle)} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-700" title="Edit"><Edit size={17}/></button><button onClick={() => removeVehicle(vehicle)} className="rounded-lg p-2 text-slate-500 hover:bg-red-50 hover:text-red-600" title="Delete"><Trash2 size={17}/></button></div></td></tr>; })}</tbody></table></div></section>
+        {(adding || editingVehicle) && <VehicleFormModal vehicle={editingVehicle} onClose={() => { setAdding(false); setEditingVehicle(null); }} onSave={saveVehicle}/>}<VehicleDetailsModal vehicle={selectedVehicle} onClose={() => setSelectedVehicle(null)}/>
+    </div>;
 };
-
 export default Vehicles;
+
