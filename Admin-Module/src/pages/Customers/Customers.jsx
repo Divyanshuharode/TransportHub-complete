@@ -1,231 +1,31 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import DataTable from "react-data-table-component";
-import CustomerModal from "./CustomerModal";
 import { CiEdit } from "react-icons/ci";
-import { LuView } from "react-icons/lu";
-import { TiUserAdd } from "react-icons/ti";
-import { getCustomersApi, totalCustomersApi, activeCustomersApi, inActiveCustomersApi, addCustomerApi, deleteCustomerApi } from "../../services/customer.service"
+import { LuEye, LuRefreshCw, LuUserRoundPlus, LuUsers } from "react-icons/lu";
+import CustomerModal from "./CustomerModal";
+import { getCustomersApi, totalCustomersApi, activeCustomersApi, inActiveCustomersApi, addCustomerApi, updateCustomerApi, deleteCustomerApi } from "../../services/customer.service";
 
-const tableStyles = {
-    headRow: { style: { minHeight: "48px", backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" } },
-    headCells: { style: { color: "#475569", fontSize: "12px", fontWeight: 600 } },
-    rows: { style: { minHeight: "58px", color: "#334155", fontSize: "13px" }, highlightOnHoverStyle: { backgroundColor: "#f8fafc" } },
-    pagination: { style: { borderTop: "1px solid #e2e8f0", color: "#64748b" } },
-};
-
-function Customers() {
-
-    const [open, setOpen] = useState(false);
-    const [name, setName] = useState("");
-    const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
-    const [customer, setCustomer] = useState([]);
-    const [totalCustomer, setTotalCustomer] = useState(0);
-    const [activeCustomer, setActiveCustomer] = useState(0);
-    const [inactiveCustomer, setInActiveCustomer] = useState(0);
-    const [selectedCustomer, setSelectedCustomer] = useState(0);
-
-    useEffect(() => {
-        fetchCustomers();
-    }, []);
-
-    const fetchCustomers = async () => {
-        const results = await Promise.allSettled([
-            getCustomersApi(),
-            totalCustomersApi(),
-            activeCustomersApi(),
-            inActiveCustomersApi(),
-        ]);
-        console.log(results[0], results[1], results[2], results[3]);
-
-        if (results[0].status === "fulfilled") {
-            setCustomer(results[0].value.data.data ?? []);
-        } else {
-            setCustomer([]);
-            console.log(results[0].reason);
-        }
-
-        if (results[1].status === "fulfilled") {
-            setTotalCustomer(results[1].value.data.data?.[0]?.totalCustomer ?? 0);
-        } else {
-            setTotalCustomer(0);
-            console.log(results[1].reason);
-        }
-
-        if (results[2].status === "fulfilled") {
-            setActiveCustomer(results[2].value.data.data?.[0].activeCustomers ?? 0);
-        } else {
-            setActiveCustomer(0);
-            console.log(results[2].reason);
-        }
-
-        if (results[3].status === "fulfilled") {
-            setInActiveCustomer(results[3].value.data.data?.[0]?.inActiveCustomer ?? 0);
-        } else {
-            setInActiveCustomer(0);
-            console.log(results[3].reason);
-        }
-    };
-    const openAddModel = () => {
-        setName("");
-        setEmail("");
-        setPhone("");
-        setOpen(true);
-    };
-
-    const addCustomer = async () => {
-        try {
-            await addCustomerApi({
-                customer_name: name,
-                email: email,
-                mobile_number: phone,
-            });
-            await fetchCustomers();
-            setOpen(false);
-            setName("");
-            setEmail("");
-            setPhone("");
-        } catch (err) {
-            console.log(err);
-        }
-    };
-
-    const deleteCustomer = () => {
-        deleteCustomerApi();
-    }
-
+const tableStyles = { headRow: { style: { minHeight: "50px", backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" } }, headCells: { style: { color: "#64748b", fontSize: "11px", fontWeight: 700, textTransform: "uppercase" } }, rows: { style: { minHeight: "60px", color: "#334155", fontSize: "13px" }, highlightOnHoverStyle: { backgroundColor: "#f8fafc" } }, pagination: { style: { borderTop: "1px solid #e2e8f0", color: "#64748b" } } };
+export default function Customers() {
+    const [customers, setCustomers] = useState([]), [stats, setStats] = useState({ total: 0, active: 0, inactive: 0 }), [modal, setModal] = useState({ open: false, mode: "add", customer: null }), [loading, setLoading] = useState(true), [error, setError] = useState("");
+    const fetchCustomers = useCallback(async () => { setLoading(true); setError(""); const results = await Promise.allSettled([getCustomersApi(), totalCustomersApi(), activeCustomersApi(), inActiveCustomersApi()]); if (results[0].status === "fulfilled") setCustomers(results[0].value.data.data || []); else { setCustomers([]); setError(results[0].reason.response?.data?.message || "Customers load nahi hue. Backend check karke refresh karein."); } setStats({ total: results[1].status === "fulfilled" ? Number(results[1].value.data.data?.[0]?.totalCustomer || 0) : 0, active: results[2].status === "fulfilled" ? Number(results[2].value.data.data?.[0]?.activeCustomers || 0) : 0, inactive: results[3].status === "fulfilled" ? Number(results[3].value.data.data?.[0]?.inActiveCustomer || 0) : 0 }); setLoading(false); }, []);
+    useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
+    const recent = useMemo(() => customers.filter(c => c.created_at && Date.now() - new Date(c.created_at).getTime() < 30 * 86400000).length, [customers]);
+    const saveCustomer = async (form) => { if (modal.mode === "edit") await updateCustomerApi(modal.customer.customer_id, form); else await addCustomerApi(form); await fetchCustomers(); };
+    const deactivate = async (customer) => { if (!window.confirm(`${customer.customer_name} ka account deactivate karein?`)) return; try { await deleteCustomerApi(customer.customer_id); await fetchCustomers(); } catch (err) { setError(err.response?.data?.message || "Customer account update nahi ho paya."); } };
     const columns = [
-        {
-            name: "ID",
-            selector: item => item.customer_id,
-            sortable: true,
-        },
-        {
-            name: "Customer Name",
-            selector: item => item.customer_name,
-            cell: item => <span className="font-medium text-slate-800">{item.customer_name}</span>,
-            sortable: true,
-        },
-        {
-            name: "Email",
-            selector: item => item.email,
-            sortable: true,
-        },
-        {
-            name: "Phone",
-            selector: item => item.mobile_number,
-            sortable: true,
-        },
-        {
-            name: "Role",
-            selector: item => item.role,
-            sortable: true,
-        },
-        {
-            name: "Status",
-            selector: item => item.account_status,
-            cell: item => (
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${item.account_status?.toLowerCase() === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-                    {item.account_status}
-                </span>
-            ),
-        },
-        {
-            name: "Created At",
-            selector: item => item.created_at,
-            sortable: true,
-        },
-        {
-            name: "Action",
-            cell: row => (
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => {
-                            setSelectedCustomer({
-                                name: row.customer_name,
-                                email: row.email,
-                                phone: row.mobile_number,
-                                city: row.city || "",
-                            });
-                            setOpen(true);
-                        }}
-                        className="rounded-md bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-                    >
-                        <LuView />
-
-                    </button>
-                    <button className="rounded-md bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-rose-100">
-                        <CiEdit />
-                    </button>
-                </div>
-            ),
-        },
+        { name: "Customer", selector: r => r.customer_name, sortable: true, minWidth: "190px", cell: r => <div><div className="font-semibold text-slate-800">{r.customer_name}</div><div className="mt-0.5 text-xs text-slate-400">#{r.customer_id}</div></div> },
+        { name: "Email", selector: r => r.email, sortable: true, minWidth: "210px" },
+        { name: "Phone", selector: r => r.mobile_number, sortable: true },
+        { name: "Status", selector: r => r.account_status, sortable: true, cell: r => <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${String(r.account_status).toLowerCase() === "active" ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{r.account_status || "Unknown"}</span> },
+        { name: "Joined", selector: r => r.created_at, sortable: true, cell: r => r.created_at ? new Date(r.created_at).toLocaleDateString() : "—" },
+        { name: "Actions", right: true, cell: r => <div className="flex gap-1"><button title="View details" onClick={() => setModal({ open: true, mode: "view", customer: r })} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-700"><LuEye size={17}/></button><button title="Edit customer" onClick={() => setModal({ open: true, mode: "edit", customer: r })} className="rounded-lg p-2 text-slate-500 hover:bg-blue-50 hover:text-blue-700"><CiEdit size={19}/></button>{String(r.account_status).toLowerCase() === "active" && <button title="Deactivate" onClick={() => deactivate(r)} className="rounded-lg px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50">Deactivate</button>}</div> }
     ];
-
-    return (
-        <div className="min-h-full bg-slate-50 p-4 sm:p-1 lg:p-2">
-            <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-                <div>
-                    <h1 className="mt-1 text-l font-bold tracking-tight text-slate-900">Cutomers</h1>
-                </div>
-                <button
-                    onClick={openAddModel}
-                    className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 flex items-center justify-center gap-2"
-                >
-                    <TiUserAdd size={18} /> Add
-                </button>
-            </div>
-
-
-            <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-lg border border-slate-200 bg-white p-3">
-                    <p className="text-xs font-medium text-slate-500">Total customers</p>
-                    <h2 className="mt-1 text-2xl font-bold text-slate-900">{totalCustomer}</h2>
-                </div>
-
-                <div className="rounded-lg border border-emerald-200 bg-white p-3">
-                    <p className="text-xs font-medium text-slate-500">Active</p>
-                    <h2 className="mt-1 text-2xl font-bold text-emerald-700">{activeCustomer}</h2>
-                </div>
-
-                <div className="rounded-lg border border-rose-200 bg-white p-3">
-                    <p className="text-xs font-medium text-slate-500">Inactive</p>
-                    <h2 className="mt-1 text-2xl font-bold text-rose-600">{inactiveCustomer}</h2>
-                </div>
-
-                <div className="rounded-lg border border-blue-200 bg-white p-3">
-                    <p className="text-xs font-medium text-slate-500">New customers</p>
-                    <h2 className="mt-1 text-2xl font-bold text-blue-700">0</h2>
-                </div>
-            </div>
-
-
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <DataTable
-                    columns={columns}
-                    data={customer}
-                    customStyles={tableStyles}
-                    pagination
-                    highlightOnHover
-                    responsive
-                    persistTableHead
-                    noDataComponent={<div className="py-10 text-sm text-slate-500">No customers found.</div>}
-                />
-            </div>
-
-            <CustomerModal
-                open={open}
-                setOpen={setOpen}
-                name={name}
-                setName={setName}
-                email={email}
-                setEmail={setEmail}
-                phone={phone}
-                setPhone={setPhone}
-                addCustomer={addCustomer}
-            />
-        </div>
-    );
+    return <div className="min-h-full space-y-5 bg-slate-50 p-4 sm:p-6 lg:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold tracking-[0.16em] text-blue-600">CUSTOMER MANAGEMENT</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Customers</h1><p className="mt-1 text-sm text-slate-500">Customer profiles and account activity.</p></div><div className="flex gap-2"><button onClick={fetchCustomers} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"><LuRefreshCw size={16}/> Refresh</button><button onClick={() => setModal({ open: true, mode: "add", customer: null })} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"><LuUserRoundPlus size={17}/> Add customer</button></div></div>
+        {error && <div role="alert" className="flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}<button onClick={() => setError("")}>Dismiss</button></div>}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{[["Total customers",stats.total,"All customer accounts","text-blue-600","bg-blue-50"],["Active",stats.active,"Currently active","text-emerald-600","bg-emerald-50"],["Inactive",stats.inactive,"Deactivated accounts","text-rose-600","bg-rose-50"],["Joined in 30 days",recent,"From loaded customer records","text-indigo-600","bg-indigo-50"]].map(([label,value,desc,color,bg])=><div key={label} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between text-sm font-medium text-slate-500">{label}<span className={`rounded-xl p-2 ${bg} ${color}`}><LuUsers size={18}/></span></div><div className="mt-3 text-3xl font-bold text-slate-900">{value}</div><div className="mt-1 text-xs text-slate-500">{desc}</div></div>)}</div>
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><DataTable columns={columns} data={customers} customStyles={tableStyles} pagination highlightOnHover responsive persistTableHead progressPending={loading} progressComponent={<div className="py-12 text-sm text-slate-500">Loading customers…</div>} noDataComponent={<div className="py-12 text-sm text-slate-500">No customers found.</div>}/></div>
+        <CustomerModal open={modal.open} setOpen={(open) => setModal(current => ({ ...current, open }))} mode={modal.mode} customer={modal.customer} onSave={saveCustomer}/>
+    </div>;
 }
 
-export default Customers;
