@@ -1,146 +1,25 @@
-import { FileText, CheckCircle, Clock, XCircle, Upload, Eye } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Clock3, ExternalLink, FileCheck2, FileText, LoaderCircle, Plus, RefreshCw, X, XCircle } from "lucide-react";
+import api from "../../services/api";
 
-const Document_verification = () => {
-    const documents = [
-        { id: 1, name: "Driving License", number: "DL-MP-2024-12345", date: "20 Oct 2026", status: "Verified" },
-        { id: 2, name: "Vehicle Registration (RC)", number: "MP09AB1234", date: "21 Oct 2026", status: "Pending" },
-        { id: 3, name: "Insurance Certificate", number: "INS-2026-5678", date: "22 Oct 2026", status: "Verified" },
-        { id: 4, name: "Fitness Certificate", number: "FC-MP-9012", date: "22 Oct 2026", status: "Rejected" },
-    ];
+function UploadModal({ close, onSubmit }) {
+    const [form, setForm] = useState({ document_type: "Driving License", document_number: "", file_url: "" }), [saving, setSaving] = useState(false), [error, setError] = useState("");
+    async function submit(event) { event.preventDefault(); setSaving(true); setError(""); try { await onSubmit(form); close(); } catch (err) { setError(err.response?.data?.message || "Document submit nahi ho paya."); } finally { setSaving(false); } }
+    return <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" onMouseDown={e=>e.target===e.currentTarget&&close()}><form onSubmit={submit} className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"><div className="flex items-center justify-between bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-5 text-white"><div><h2 className="text-lg font-bold">Submit document</h2><p className="mt-1 text-sm text-blue-100">Add document details for transporter verification.</p></div><button type="button" onClick={close} className="rounded-lg p-2 hover:bg-white/15"><X size={19}/></button></div><div className="space-y-4 p-6"><label className="block text-sm font-medium text-slate-700">Document type<select value={form.document_type} onChange={e=>setForm({...form,document_type:e.target.value})} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3"><option>Driving License</option><option>Vehicle Registration (RC)</option><option>Insurance Certificate</option><option>Fitness Certificate</option><option>PAN Card</option><option>Other</option></select></label><label className="block text-sm font-medium text-slate-700">Document number<input required maxLength={100} value={form.document_number} onChange={e=>setForm({...form,document_number:e.target.value})} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-3 outline-none focus:border-blue-500" placeholder="Enter document number"/></label><label className="block text-sm font-medium text-slate-700">Document link <span className="font-normal text-slate-400">(optional)</span><input type="url" value={form.file_url} onChange={e=>setForm({...form,file_url:e.target.value})} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-3 outline-none focus:border-blue-500" placeholder="https://…"/></label><p className="text-xs leading-5 text-slate-500">This local setup saves the document number and an optional link. It does not upload a file to cloud storage.</p>{error&&<p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}</div><div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4"><button type="button" onClick={close} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600">Cancel</button><button disabled={saving} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saving&&<LoaderCircle className="animate-spin" size={16}/>}Submit</button></div></form></div>;
+}
 
-    return (
-        <div className="space-y-2 p-1">
+export default function Document_verification() {
+    const [documents,setDocuments]=useState([]),[filter,setFilter]=useState("ALL"),[open,setOpen]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
+    async function load(){setLoading(true);setError("");try{const {data}=await api.get("/api/transporter/documents");setDocuments(data.data||[]);}catch(err){setError(err.response?.data?.message||"Documents load nahi hue.");}finally{setLoading(false);}}
+    useEffect(()=>{load();},[]);
+    async function submit(form){await api.post("/api/transporter/documents",form);setNotice("Document verification ke liye submit ho gaya.");await load();}
+    const counts={total:documents.length,verified:documents.filter(d=>d.status==="VERIFIED").length,pending:documents.filter(d=>d.status==="PENDING").length,rejected:documents.filter(d=>d.status==="REJECTED").length};
+    const visible=documents.filter(d=>filter==="ALL"||d.status===filter);
+    const cards=[["Total documents",counts.total,FileText,"text-blue-600","bg-blue-50"],["Verified",counts.verified,CheckCircle2,"text-emerald-600","bg-emerald-50"],["Pending",counts.pending,Clock3,"text-amber-600","bg-amber-50"],["Rejected",counts.rejected,XCircle,"text-rose-600","bg-rose-50"]];
+    return <div className="space-y-6 p-3 sm:p-5 lg:p-7"><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-xs font-bold tracking-[0.16em] text-blue-600">ACCOUNT COMPLIANCE</p><h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Documents & verification</h1><p className="mt-1 text-sm text-slate-500">Submit details and track review status.</p></div><div className="flex gap-2"><button onClick={load} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm font-semibold text-slate-600"><RefreshCw size={16}/>Refresh</button><button onClick={()=>setOpen(true)} className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"><Plus size={17}/>Submit document</button></div></div>
+        {error&&<div role="alert" className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"><AlertCircle size={17}/>{error}</div>}{notice&&<div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{cards.map(([title,count,Icon,color,bg])=><div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center justify-between text-sm font-medium text-slate-500">{title}<span className={`rounded-xl p-2.5 ${bg} ${color}`}><Icon size={18}/></span></div><p className="mt-3 text-3xl font-bold text-slate-900">{count}</p></div>)}</div>
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4"><div className="flex items-start gap-3"><FileCheck2 className="mt-0.5 text-blue-700" size={19}/><div><h2 className="text-sm font-semibold text-slate-900">Verification process</h2><p className="mt-1 text-sm text-slate-600">Your submission appears as Pending until an admin reviews it. A rejected submission includes the reviewer’s note when available.</p></div></div></div>
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h2 className="font-semibold text-slate-900">My documents</h2><p className="mt-1 text-sm text-slate-500">{documents.length} submitted document{documents.length===1?"":"s"}</p></div><select value={filter} onChange={e=>setFilter(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"><option value="ALL">All statuses</option><option value="PENDING">Pending</option><option value="VERIFIED">Verified</option><option value="REJECTED">Rejected</option></select></div><div className="overflow-x-auto"><table className="w-full min-w-[690px] text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr>{["Document","Number","Submitted","Status","Link"].map(x=><th key={x} className="px-5 py-4">{x}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{loading?<tr><td colSpan="5" className="py-12 text-center text-slate-500"><LoaderCircle className="mx-auto mb-2 animate-spin"/>Loading documents…</td></tr>:visible.length?visible.map(doc=><tr key={doc.document_id} className="hover:bg-slate-50"><td className="px-5 py-4 font-semibold text-slate-800">{doc.document_type}</td><td className="px-5 py-4 text-slate-600">{doc.document_number}</td><td className="px-5 py-4 text-slate-600">{new Date(doc.uploaded_at).toLocaleDateString()}</td><td className="px-5 py-4"><span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${doc.status==="VERIFIED"?"bg-emerald-50 text-emerald-700":doc.status==="REJECTED"?"bg-rose-50 text-rose-700":"bg-amber-50 text-amber-700"}`}>{doc.status}</span>{doc.rejection_note&&<p className="mt-1 max-w-48 text-xs text-rose-600">{doc.rejection_note}</p>}</td><td className="px-5 py-4">{doc.file_url?<a href={doc.file_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-medium text-blue-700 hover:underline">Open <ExternalLink size={14}/></a>:<span className="text-slate-400">No link</span>}</td></tr>):<tr><td colSpan="5" className="px-5 py-14 text-center text-slate-500">No documents in this status yet.</td></tr>}</tbody></table></div></section>{open&&<UploadModal close={()=>setOpen(false)} onSubmit={submit}/>}</div>;
+}
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Documents Verification</h1>
-                    <p className="mt-1 text-sm text-gray-500">Upload and manage your transport documents.</p>
-                </div>
-
-                <button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700">
-                    <Upload size={17} /> Upload Document
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div>
-                        <p className="text-xs text-gray-500">Total Documents</p>
-                        <h2 className="mt-1 text-xl font-bold text-gray-900">04</h2>
-                    </div>
-                    <FileText size={20} className="text-blue-600" />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div>
-                        <p className="text-xs text-gray-500">Verified</p>
-                        <h2 className="mt-1 text-xl font-bold text-gray-900">02</h2>
-                    </div>
-                    <CheckCircle size={20} className="text-green-600" />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div>
-                        <p className="text-xs text-gray-500">Pending</p>
-                        <h2 className="mt-1 text-xl font-bold text-gray-900">01</h2>
-                    </div>
-                    <Clock size={20} className="text-amber-600" />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
-                    <div>
-                        <p className="text-xs text-gray-500">Rejected</p>
-                        <h2 className="mt-1 text-xl font-bold text-gray-900">01</h2>
-                    </div>
-                    <XCircle size={20} className="text-red-500" />
-                </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
-                <div className="flex items-start gap-3">
-                    <FileText size={20} className="mt-0.5 text-blue-600" />
-                    <div>
-                        <h3 className="text-sm font-semibold text-gray-900">Document Verification Guidelines</h3>
-                        <p className="mt-1 text-sm text-gray-500">
-                            Upload clear, valid documents. Rejected documents must be uploaded again after correcting the issue.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-4">
-                    <div>
-                        <h2 className="font-semibold text-gray-900">My Documents</h2>
-                        <p className="mt-1 text-xs text-gray-500">Check your document verification status.</p>
-                    </div>
-
-                    <select className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 outline-none focus:border-blue-500">
-                        <option>All Status</option>
-                        <option>Verified</option>
-                        <option>Pending</option>
-                        <option>Rejected</option>
-                    </select>
-                </div>
-
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-                            <tr>
-                                <th className="px-4 py-3">Document</th>
-                                <th className="px-4 py-3">Document Number</th>
-                                <th className="px-4 py-3">Upload Date</th>
-                                <th className="px-4 py-3">Status</th>
-                                <th className="px-4 py-3">Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-gray-100">
-                            {documents.map((document) => (
-                                <tr key={document.id} className="hover:bg-gray-50">
-                                    <td className="whitespace-nowrap px-4 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="rounded-lg bg-blue-50 p-2 text-blue-600">
-                                                <FileText size={18} />
-                                            </div>
-                                            <span className="font-medium text-gray-800">{document.name}</span>
-                                        </div>
-                                    </td>
-
-                                    <td className="whitespace-nowrap px-4 py-4 text-gray-600">{document.number}</td>
-                                    <td className="whitespace-nowrap px-4 py-4 text-gray-600">{document.date}</td>
-
-                                    <td className="whitespace-nowrap px-4 py-4">
-                                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${document.status === "Verified" ? "bg-green-100 text-green-700" :
-                                            document.status === "Pending" ? "bg-amber-100 text-amber-700" :
-                                                "bg-red-100 text-red-700"
-                                            }`}>
-                                            {document.status}
-                                        </span>
-                                    </td>
-
-                                    <td className="whitespace-nowrap px-4 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <button title="View Document" className="rounded-md border border-gray-200 p-2 text-gray-600 hover:bg-gray-100">
-                                                <Eye size={16} />
-                                            </button>
-
-                                            {document.status === "Rejected" && (
-                                                <button className="rounded-md bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-100">
-                                                    Re-upload
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-        </div>
-    );
-};
-
-export default Document_verification;
