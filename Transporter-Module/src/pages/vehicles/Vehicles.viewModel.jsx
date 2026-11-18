@@ -1,4 +1,4 @@
-import { X, Truck, Hash, Weight, UserRound, CalendarDays, Clock, ShieldCheck } from "lucide-react";
+import { X, Truck, Hash, Weight, CalendarDays, Clock } from "lucide-react";
 
 const VehicleDetailsModal = ({ vehicle, onClose }) => {
     if (!vehicle) return null;
@@ -28,8 +28,8 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                             <p className="text-xs font-medium text-gray-500">Vehicle Number</p>
                             <h3 className="mt-1 text-lg font-bold uppercase text-gray-900">{vehicle.vehicle_number}</h3>
                         </div>
-                        <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${vehicle.status === "Available" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}>
-                            {vehicle.status}
+                        <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${String(vehicle.status).toUpperCase() === "AVAILABLE" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"}`}>
+                            {String(vehicle.status || "AVAILABLE").replaceAll("_", " ")}
                         </span>
                     </div>
 
@@ -60,26 +60,10 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
 
                         <div className="rounded-xl border border-gray-200 p-4">
                             <div className="mb-2 flex items-center gap-2 text-blue-600">
-                                <UserRound size={17} />
-                                <p className="text-xs font-medium text-gray-500">Transporter ID</p>
-                            </div>
-                            <p className="font-semibold text-gray-900">{vehicle.transporter_id}</p>
-                        </div>
-
-                        <div className="rounded-xl border border-gray-200 p-4 sm:col-span-2">
-                            <div className="mb-2 flex items-center gap-2 text-blue-600">
-                                <ShieldCheck size={17} />
-                                <p className="text-xs font-medium text-gray-500">Assigned Driver ID</p>
-                            </div>
-                            <p className="font-semibold text-gray-900">{vehicle.driver_id ?? "Not Assigned"}</p>
-                        </div>
-
-                        <div className="rounded-xl border border-gray-200 p-4">
-                            <div className="mb-2 flex items-center gap-2 text-blue-600">
                                 <CalendarDays size={17} />
                                 <p className="text-xs font-medium text-gray-500">Created At</p>
                             </div>
-                            <p className="text-sm font-medium text-gray-800">{new Date(vehicle.created_at).toLocaleString()}</p>
+                            <p className="text-sm font-medium text-gray-800">{vehicle.created_at ? new Date(vehicle.created_at).toLocaleString() : "Not available"}</p>
                         </div>
 
                         <div className="rounded-xl border border-gray-200 p-4">
@@ -87,7 +71,7 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
                                 <Clock size={17} />
                                 <p className="text-xs font-medium text-gray-500">Last Updated</p>
                             </div>
-                            <p className="text-sm font-medium text-gray-800">{new Date(vehicle.updated_at).toLocaleString()}</p>
+                            <p className="text-sm font-medium text-gray-800">{vehicle.updated_at ? new Date(vehicle.updated_at).toLocaleString() : "Not available"}</p>
                         </div>
                     </div>
 
@@ -103,3 +87,4 @@ const VehicleDetailsModal = ({ vehicle, onClose }) => {
 };
 
 export default VehicleDetailsModal;
+
