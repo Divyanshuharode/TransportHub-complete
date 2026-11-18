@@ -8,6 +8,7 @@ const {
     activeCustomers,
     inActiveCustomers,
     addCustomers,
+    updateCustomer,
     deleteCustomer
 } = require("./customer.controller");
 
@@ -16,6 +17,7 @@ customerRoute.post("/api/totalCustomers", totalCustomers);
 customerRoute.post("/api/activeCustomers", activeCustomers);
 customerRoute.post("/api/inActiveCustomers", inActiveCustomers);
 customerRoute.post("/api/addCustomers", addCustomers);
+customerRoute.patch("/api/customers/:customer_id", updateCustomer);
 customerRoute.post("/api/deleteCustomers/:customer_id", deleteCustomer);
 
 module.exports = customerRoute;

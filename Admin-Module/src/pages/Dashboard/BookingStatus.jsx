@@ -8,14 +8,9 @@ import {
     ResponsiveContainer,
 } from "recharts";
 
-const data = [
-    { name: "Completed", value: 10 },
-    { name: "Pending", value: 4 },
-    { name: "In Transit", value: 7 },
-    { name: "Cancelled", value: 1 },
-];
-
-function BookingStatus() {
+function BookingStatus({ statuses = [] }) {
+    const labels = { PENDING: "Pending", ACCEPTED: "Accepted", REJECTED: "Rejected", CONFIRMED: "Confirmed", IN_TRANSIT: "In Transit", DELIVERED: "Delivered", CANCELLED: "Cancelled" };
+    const data = statuses.map((item) => ({ name: labels[item.status] || item.status, value: Number(item.count) }));
     return (
         <div className="h-80 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:h-96 sm:p-6">
             <div className="mb-5">

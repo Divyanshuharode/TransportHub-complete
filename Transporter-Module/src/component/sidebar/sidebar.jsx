@@ -7,6 +7,7 @@ import {
     Users,
     Wallet,
     ChartNoAxesColumn,
+    Star,
     UserRound,
     FileCheck,
     Settings,
@@ -142,6 +143,12 @@ function Sidebar() {
                         }>
                             <ChartNoAxesColumn size={19} />
                             Reports
+                        </NavLink>
+                        <NavLink to="/transporter/reviews" className={({ isActive }) =>
+                            `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "bg-blue-600 text-white shadow-md shadow-blue-950/30" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`
+                        }>
+                            <Star size={19} />
+                            Reviews
                         </NavLink>
                     </div>
                 </div>

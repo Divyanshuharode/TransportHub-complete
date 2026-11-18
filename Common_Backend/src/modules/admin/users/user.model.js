@@ -1,7 +1,7 @@
 const connection = require("../../../config/db");
 
 const getUsersModel = (cbfn) => {
-    const query = "SELECT * FROM users";
+    const query = "SELECT user_id, full_name, email, account_status, created_at FROM users ORDER BY created_at DESC";
     connection.query(query, cbfn);
 };
 

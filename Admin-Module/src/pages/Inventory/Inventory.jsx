@@ -1,5 +1,6 @@
 import DataTable from "react-data-table-component";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import api from "../../services/api";
 
 const tableStyles = {
     headRow: { style: { minHeight: "48px", backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0" } },
@@ -8,22 +9,17 @@ const tableStyles = {
     pagination: { style: { borderTop: "1px solid #e2e8f0", color: "#64748b" } },
 };
 
-const starterItems = [
-    { id: "INV-101", name: "Engine Oil", category: "Vehicle supplies", quantity: 42, unit: "Litre", location: "Delhi Depot", status: "In Stock" },
-    { id: "INV-102", name: "Truck Tyre", category: "Spare parts", quantity: 8, unit: "Pieces", location: "Jaipur Depot", status: "Low Stock" },
-    { id: "INV-103", name: "First Aid Kit", category: "Safety equipment", quantity: 26, unit: "Kits", location: "Mumbai Depot", status: "In Stock" },
-    { id: "INV-104", name: "Reflective Vest", category: "Safety equipment", quantity: 0, unit: "Pieces", location: "Delhi Depot", status: "Out of Stock" },
-    { id: "INV-105", name: "Brake Pad Set", category: "Spare parts", quantity: 18, unit: "Sets", location: "Chandigarh Depot", status: "In Stock" },
-];
-
 function Inventory() {
-    const [items, setItems] = useState(() => JSON.parse(localStorage.getItem("transporthub.admin.inventory") || "null") || starterItems);
+    const [items, setItems] = useState([]);
+    const [error, setError] = useState("");
     const [editing, setEditing] = useState(null);
     const [showForm, setShowForm] = useState(false);
     const [search, setSearch] = useState("");
     const visibleItems = useMemo(() => items.filter((item) => `${item.id} ${item.name} ${item.category} ${item.location}`.toLowerCase().includes(search.toLowerCase())), [items, search]);
-    function saveItem(event) { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); const quantity = Number(values.quantity); const nextItem = { ...values, quantity, id: editing?.id || `INV-${Date.now().toString().slice(-5)}`, status: quantity === 0 ? "Out of Stock" : quantity <= 10 ? "Low Stock" : "In Stock" }; const next = editing ? items.map((item) => item.id === editing.id ? nextItem : item) : [nextItem, ...items]; setItems(next); localStorage.setItem("transporthub.admin.inventory", JSON.stringify(next)); setShowForm(false); setEditing(null); }
-    function deleteItem(id) { const next = items.filter((item) => item.id !== id); setItems(next); localStorage.setItem("transporthub.admin.inventory", JSON.stringify(next)); }
+    async function loadItems() { try { const { data } = await api.get("/api/admin/inventory"); setItems(data.data.map((item) => ({ ...item, status: Number(item.quantity) === 0 ? "Out of Stock" : Number(item.quantity) <= 10 ? "Low Stock" : "In Stock" }))); setError(""); } catch (requestError) { setError(requestError.response?.data?.message || "Could not load inventory. Please sign in again."); } }
+    useEffect(() => { loadItems(); }, []);
+    async function saveItem(event) { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); try { if (editing) await api.put(`/api/admin/inventory/${editing.id}`, values); else await api.post("/api/admin/inventory", values); await loadItems(); setShowForm(false); setEditing(null); } catch (requestError) { setError(requestError.response?.data?.message || "Could not save this item."); } }
+    async function deleteItem(id) { try { await api.delete(`/api/admin/inventory/${id}`); await loadItems(); } catch (requestError) { setError(requestError.response?.data?.message || "Could not delete this item."); } }
     const columns = [
         {
             name: "Item ID",
@@ -89,6 +85,8 @@ function Inventory() {
                     + Add item
                 </button>
             </div>
+
+            {error && <p className="mb-4 rounded-lg bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</p>}
 
             <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-slate-200 bg-white p-5">

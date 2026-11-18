@@ -1,4 +1,4 @@
-const { getTransporterCountModel, getBookingCountModel } = require("./dashboard.model");
+const { getTransporterCountModel, getBookingCountModel, getDashboardSummaryModel } = require("./dashboard.model");
 
 const getTrans = (req, res, next) => {
     getTransporterCountModel((err, result) => {
@@ -14,4 +14,9 @@ const totalBooking = (req, res, next) => {
     });
 };
 
-module.exports = { getTrans, totalBooking };
+const getDashboardSummary = (req, res, next) => getDashboardSummaryModel((err, data) => {
+    if (err) return next(err);
+    res.json({ success: true, data });
+});
+
+module.exports = { getTrans, totalBooking, getDashboardSummary };

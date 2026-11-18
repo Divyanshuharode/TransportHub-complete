@@ -1,17 +1,20 @@
-import { useState } from "react";
-import { Users, CheckCircle, Clock, Plus, Eye, Edit } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Users, CheckCircle, Clock, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { addDriverApi, deleteDriverApi, getDriversApi, updateDriverApi } from "../../services/operations.service";
+import { getVehiclesApi } from "../../services/vehicles.service";
 
 const Drivers = () => {
-    const [drivers, setDrivers] = useState(() => JSON.parse(localStorage.getItem("transporthub.transporter.drivers") || "null") || [
-        { id: 1, name: "Rahul Sharma", phone: "9876543210", license: "MP0920200012345", vehicle: "MP09 AB 1234", status: "Active" },
-        { id: 2, name: "Amit Verma", phone: "9876543211", license: "MP0420210056789", vehicle: "MP04 CD 5678", status: "Active" },
-        { id: 3, name: "Rohit Patel", phone: "9876543212", license: "MP0920220098765", vehicle: "Not Assigned", status: "Inactive" },
-    ]);
+    const [drivers, setDrivers] = useState([]);
+    const [vehicles, setVehicles] = useState([]);
     const [filter, setFilter] = useState("All Status");
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [error, setError] = useState("");
+    async function loadDrivers() { const { data } = await getDriversApi(); setDrivers(data.data.map((driver) => ({ id: driver.driver_id, name: driver.full_name, phone: driver.phone, license: driver.license_number, vehicle: driver.vehicle_number || "Not Assigned", vehicle_id: driver.vehicle_id, status: driver.status === "ACTIVE" ? "Active" : "Inactive" }))); }
+    useEffect(() => { loadDrivers().catch((requestError) => setError(requestError.response?.data?.message || "Could not load drivers.")); getVehiclesApi().then(({ data }) => setVehicles(data.data)).catch(() => setVehicles([])); }, []);
     const visibleDrivers = drivers.filter((driver) => filter === "All Status" || driver.status === filter);
-    function saveDriver(event) { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); const next = editingId ? drivers.map((driver) => driver.id === editingId ? { ...driver, ...values } : driver) : [...drivers, { ...values, id: Date.now(), status: "Active" }]; setDrivers(next); localStorage.setItem("transporthub.transporter.drivers", JSON.stringify(next)); setShowForm(false); setEditingId(null); }
+    async function saveDriver(event) { event.preventDefault(); const values = Object.fromEntries(new FormData(event.currentTarget)); const payload = { full_name: values.name, phone: values.phone, license_number: values.license, vehicle_id: values.vehicle_id || null, status: "ACTIVE" }; try { if (editingId) await updateDriverApi(editingId, payload); else await addDriverApi(payload); await loadDrivers(); setShowForm(false); setEditingId(null); setError(""); } catch (requestError) { setError(requestError.response?.data?.message || "Could not save this driver."); } }
+    async function removeDriver(id) { try { await deleteDriverApi(id); await loadDrivers(); } catch (requestError) { setError(requestError.response?.data?.message || "Could not delete this driver."); } }
 
     return (
         <div className="space-y-2 p-1">
@@ -25,6 +28,7 @@ const Drivers = () => {
                     <Plus size={17} /> Add Driver
                 </button>
             </div>
+            {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">
@@ -109,6 +113,7 @@ const Drivers = () => {
                                             <button onClick={() => { setEditingId(driver.id); setShowForm(true); }} title="Edit Driver" className="rounded-md border border-gray-200 p-2 text-blue-600 hover:bg-blue-50">
                                                 <Edit size={16} />
                                             </button>
+                                            <button onClick={() => removeDriver(driver.id)} title="Delete Driver" className="rounded-md border border-gray-200 p-2 text-red-600 hover:bg-red-50"><Trash2 size={16} /></button>
                                         </div>
                                     </td>
                                 </tr>
@@ -118,7 +123,7 @@ const Drivers = () => {
                 </div>
             </div>
 
-            {showForm && <div className="fixed inset-0 z-20 grid place-items-center bg-slate-900/40 p-4"><form onSubmit={saveDriver} className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl"><div className="flex items-center justify-between"><h2 className="text-lg font-bold">{editingId ? "Edit driver" : "Add driver"}</h2><button type="button" onClick={() => setShowForm(false)} className="text-sm text-slate-500">Close</button></div>{[["name", "Full name"], ["phone", "Phone number"], ["license", "License number"], ["vehicle", "Assigned vehicle"]].map(([name, label]) => <label key={name} className="block text-sm font-medium">{label}<input name={name} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" defaultValue={drivers.find((driver) => driver.id === editingId)?.[name] || ""} /></label>)}<button className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Save driver</button></form></div>}
+            {showForm && <div className="fixed inset-0 z-20 grid place-items-center bg-slate-900/40 p-4"><form onSubmit={saveDriver} className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-xl"><div className="flex items-center justify-between"><h2 className="text-lg font-bold">{editingId ? "Edit driver" : "Add driver"}</h2><button type="button" onClick={() => setShowForm(false)} className="text-sm text-slate-500">Close</button></div>{[["name", "Full name"], ["phone", "Phone number"], ["license", "License number"]].map(([name, label]) => <label key={name} className="block text-sm font-medium">{label}<input name={name} required className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" defaultValue={drivers.find((driver) => driver.id === editingId)?.[name] || ""} /></label>)}<label className="block text-sm font-medium">Assigned vehicle<select name="vehicle_id" defaultValue={drivers.find((driver) => driver.id === editingId)?.vehicle_id || ""} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"><option value="">Not assigned</option>{vehicles.map((vehicle) => <option key={vehicle.vehicle_id} value={vehicle.vehicle_id}>{vehicle.vehicle_number} · {vehicle.vehicle_type}</option>)}</select></label><button className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Save driver</button></form></div>}
 
         </div>
     );

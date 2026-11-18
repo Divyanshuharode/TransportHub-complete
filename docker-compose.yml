@@ -1,0 +1,72 @@
+services:
+  database:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the root .env file}
+      MYSQL_DATABASE: TransportHub_Complete
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - transporthub-mysql:/var/lib/mysql
+      - ./Common_Backend/database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./Common_Backend
+    restart: unless-stopped
+    environment:
+      PORT: 5000
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in the root .env file}
+      DB_NAME: TransportHub_Complete
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the root .env file}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      FRONTEND_ORIGINS: http://localhost:${ADMIN_PORT:-5173},http://localhost:${CUSTOMER_PORT:-5174},http://localhost:${TRANSPORTER_PORT:-5175}
+      ADMIN_NAME: ${ADMIN_NAME:?Set ADMIN_NAME in the root .env file}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in the root .env file}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in the root .env file}
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+
+  admin:
+    build:
+      context: ./Admin-Module
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+    depends_on: [backend]
+    ports:
+      - "${ADMIN_PORT:-5173}:80"
+
+  customer:
+    build:
+      context: ./Customer-module
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+    depends_on: [backend]
+    ports:
+      - "${CUSTOMER_PORT:-5174}:80"
+
+  transporter:
+    build:
+      context: ./Transporter-Module
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000}
+    restart: unless-stopped
+    depends_on: [backend]
+    ports:
+      - "${TRANSPORTER_PORT:-5175}:80"
+
+volumes:
+  transporthub-mysql:

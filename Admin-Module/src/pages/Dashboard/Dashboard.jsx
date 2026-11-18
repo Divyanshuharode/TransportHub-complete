@@ -6,30 +6,14 @@ import DashboardCards from "../../components/cards/DashboardCards";
 import BookingChart from "./BookingChart";
 import BookingStatus from "./BookingStatus";
 
-import { getTransporterCount, totalCustomersApi } from "../../services/dashboard.service";
+import api from "../../services/api";
 
 function Dashboard() {
-    const [transporterCount, setTransporterCount] = useState(0);
-    const [customerCount, setCustomerCount] = useState(0);
-
+    const [summary, setSummary] = useState({ counts: {}, statuses: [], monthly: [], recent: [] });
+    const [error, setError] = useState("");
     useEffect(() => {
-        getTrans();
+        api.get("/api/admin/dashboard").then(({ data }) => setSummary(data.data)).catch((requestError) => setError(requestError.response?.data?.message || "Could not load dashboard data."));
     }, []);
-
-    const getTrans = async () => {
-        try {
-            const transporterCount = await getTransporterCount();
-            setTransporterCount(transporterCount.data.data[0]?.totalTransporters || 0);
-
-            const totaltotalCustomers = await totalCustomersApi();
-            // console.log(totaltotalCustomers);
-            setCustomerCount(totaltotalCustomers.data.data[0]?.totalTransporters || 0)
-
-        } catch (err) {
-            console.log(err);
-        }
-    };
-
 
     return (
         <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
@@ -46,13 +30,14 @@ function Dashboard() {
                 </div>
             </div>
 
-            <DashboardCards transporterCount={transporterCount} />
+            {error && <p className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
+            <DashboardCards counts={summary.counts} />
             <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-5">
                 <div className="xl:col-span-3">
-                    <BookingChart />
+                    <BookingChart monthly={summary.monthly} />
                 </div>
                 <div className="xl:col-span-2">
-                    <BookingStatus />
+                    <BookingStatus statuses={summary.statuses} />
                 </div>
             </div>
             <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -76,9 +61,8 @@ function Dashboard() {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">Booking data will appear here when the booking API is connected.</td>
-                            </tr>
+                            {summary.recent.map((booking) => <tr key={booking.booking_id} className="border-t border-slate-100"><td className="px-5 py-3 font-semibold text-blue-700">{booking.booking_number}</td><td className="px-5 py-3">{booking.customer_name}</td><td className="px-5 py-3">{booking.pickup_location} → {booking.delivery_location}</td><td className="px-5 py-3">{booking.vehicle_type}</td><td className="px-5 py-3">{new Date(booking.created_at).toLocaleDateString()}</td><td className="px-5 py-3">{booking.status.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())}</td></tr>)}
+                            {!summary.recent.length && !error && <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-slate-500">No bookings yet.</td></tr>}
                         </tbody>
                     </table>
                 </div>

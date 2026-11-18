@@ -1,9 +1,9 @@
 const errorMiddleware = (err, req, res, next) => {
-    console.log(err.message);
+    console.error(err);
 
     res.status(500).send({
         success: false,
-        message: err.message,
+        message: process.env.NODE_ENV === "production" ? "An unexpected server error occurred" : err.message,
         data: null
     });
 };

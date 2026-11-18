@@ -47,11 +47,13 @@ const loginTransporter = async (req, res, next) => {
                 return res.status(403).send({ success: false, message: "Your account is not active", data: null });
             }
 
-            const token = jwt.sign({ transporter_id, role, account_status }, process.env.JWT_SECRET, { expiresIn: "1m" });
+            const token = jwt.sign({ transporter_id, role, account_status }, process.env.JWT_SECRET, { expiresIn: "8h" });
 
             res.cookie("token", token, {
                 httpOnly: true, //frontend JavaScript cookie ko access nahi kar sakta.(XSS attack)
                 sameSite: "lax",  //Normal navigation mein limited cross-site cookie support
+                secure: process.env.COOKIE_SECURE === "true",
+                maxAge: 8 * 60 * 60 * 1000,
                 path: "/" //cookie website ke sabhi paths par available hog
             });
 

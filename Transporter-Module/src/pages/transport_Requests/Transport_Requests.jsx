@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Truck, Clock, CheckCircle, XCircle, Eye } from "lucide-react";
+import { getBookingRequestsApi, respondToBookingApi } from "../../services/operations.service";
+
+function mapRequest(item) { return { id: item.booking_id, customer: item.customer_name, pickup: item.pickup_location, drop: item.delivery_location, vehicle: item.vehicle_type, date: item.pickup_date?.slice(0, 10), amount: item.amount ? `₹${Number(item.amount).toLocaleString("en-IN")}` : "To be quoted", status: item.status.toLowerCase().replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) }; }
 
 const Transport_Requests = () => {
-    const [requests, setRequests] = useState(() => JSON.parse(localStorage.getItem("transporthub.transporter.requests") || "null") || [
-        { id: "TR-101", customer: "Rahul Sharma", pickup: "Indore", drop: "Bhopal", vehicle: "Mini Truck", date: "25 Oct 2026", amount: "₹2,500", status: "Pending" },
-        { id: "TR-102", customer: "Amit Verma", pickup: "Bhopal", drop: "Jabalpur", vehicle: "Light Truck", date: "26 Oct 2026", amount: "₹5,000", status: "Pending" },
-        { id: "TR-103", customer: "Priya Singh", pickup: "Indore", drop: "Ujjain", vehicle: "Mini Truck", date: "27 Oct 2026", amount: "₹1,800", status: "Accepted" },
-    ]);
+    const [requests, setRequests] = useState([]);
     const [filter, setFilter] = useState("All Status");
-    function updateStatus(id, status) { const next = requests.map((item) => item.id === id ? { ...item, status } : item); setRequests(next); localStorage.setItem("transporthub.transporter.requests", JSON.stringify(next)); }
+    const [error, setError] = useState("");
+    useEffect(() => { getBookingRequestsApi().then(({ data }) => setRequests(data.data.map(mapRequest))).catch((requestError) => setError(requestError.response?.data?.message || "Could not load booking requests.")); }, []);
+    async function updateStatus(id, status) { setError(""); try { await respondToBookingApi(id, status === "Accepted" ? "ACCEPTED" : "REJECTED"); const { data } = await getBookingRequestsApi(); setRequests(data.data.map(mapRequest)); } catch (requestError) { setError(requestError.response?.data?.message || "Could not update this request."); } }
     const visibleRequests = requests.filter((item) => filter === "All Status" || item.status === filter);
 
     return (
@@ -18,6 +19,7 @@ const Transport_Requests = () => {
                 <h1 className="text-2xl font-bold text-gray-900">Transport Requests</h1>
                 {/* <p className="mt-1 text-sm text-gray-500">Manage and respond to your transport booking requests.</p> */}
             </div>
+            {error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3">

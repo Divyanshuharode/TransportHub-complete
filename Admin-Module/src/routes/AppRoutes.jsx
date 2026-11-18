@@ -12,6 +12,7 @@ import Inventory from "../pages/Inventory/Inventory";
 import Bookings from "../pages/Bookings/Bookings";
 import Login from "../pages/Login/Login";
 import Settings from "../pages/Setting/Settings";
+import Reviews from "../pages/Reviews/Reviews";
 import ProtectedRoute from "./ProtectedRoute";
 
 export default function AppRoutes() {
@@ -39,6 +40,7 @@ export default function AppRoutes() {
                     <Route path="inventory" element={<Inventory />} />
 
                     <Route path="bookings" element={<Bookings />} />
+                    <Route path="reviews" element={<Reviews />} />
 
                     <Route path="settings" element={<Settings />} />
 

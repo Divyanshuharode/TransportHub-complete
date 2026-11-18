@@ -7,8 +7,10 @@ const {
 } = require("./vehicle.model");
 
 const addVehicle = (req, res, next) => {
+    const { vehicle_number, vehicle_type, capacity } = req.body;
+    if (!vehicle_number?.trim() || !vehicle_type?.trim() || !Number.isFinite(Number(capacity)) || Number(capacity) <= 0) return res.status(400).json({ success: false, message: "Vehicle number, type and positive capacity are required" });
     const vehicle_id = generateUUID();
-    const data = [vehicle_id, req.body.transporter_id, req.body.vehicle_number, req.body.vehicle_type, req.body.capacity]
+    const data = [vehicle_id, req.transporterId, vehicle_number.trim().toUpperCase(), vehicle_type.trim(), Number(capacity)]
     addVehicleModel(data, (err, result) => {
         if (err) return next(err)
         res.json({ success: true, message: "vehicle added sucessfully", data: { vehicle_id, ...result } })
@@ -16,22 +18,23 @@ const addVehicle = (req, res, next) => {
 }
 
 const getVehicles = (req, res, next) => {
-    getVehicleModel((err, result) => {
+    getVehicleModel(req.transporterId, (err, result) => {
         if (err) return next(err)
         res.send({ success: true, message: " feched vehicles ", data: result })
     })
 }
 
 const vehiclesCount = (req, res, next) => {
-    vehiclesCountModel((err, result) => {
+    vehiclesCountModel(req.transporterId, (err, result) => {
         if (err) return next(err);
         res.status(200).json({ success: true, message: "vehicles Count", data: result })
     })
 }
 
 const deleteVehicles = (req, res, next) => {
-    deleteVehiclesModel(req.params.vehicle_id, (err, result) => {
+    deleteVehiclesModel(req.params.vehicle_id, req.transporterId, (err, result) => {
         if (err) return next(err);
+        if (!result.affectedRows) return res.status(404).json({ success: false, message: "Vehicle not found" });
         res.send({ success: true, message: "vehicle deleted", data: result })
     })
 }

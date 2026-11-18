@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import adminStore from "../../store/admin.store";
+import { logoutAdmin } from "../../services/auth.service";
 
 function Navbar() {
     const navigate = useNavigate();
@@ -7,7 +8,7 @@ function Navbar() {
     const { logOut } = adminStore();
 
     const logout = () => {
-        logOut();
+        logoutAdmin().catch(() => {}).finally(logOut);
         navigate("/");
     };
 

@@ -1,7 +1,7 @@
 const connection = require("../../../config/db");
 
 const getCustomersModel = (cbfn) => {
-    const query = "SELECT * FROM customers";
+    const query = "SELECT customer_id, customer_name, email, mobile_number, city, address, account_status, created_at FROM customers ORDER BY created_at DESC";
     connection.query(query, cbfn);
 };
 
@@ -11,12 +11,12 @@ const totalCustomersModel = (cbfn) => {
 };
 
 const activeCustomersModel = (cbfn) => {
-    const query = "SELECT COUNT(*) AS activeCustomers FROM customers WHERE account_status = ?";
+    const query = "SELECT COUNT(*) AS activeCustomers FROM customers WHERE LOWER(account_status) = ?";
     connection.query(query, ["active"], cbfn);
 };
 
 const inActiveCustomersModel = (cbfn) => {
-    const query = "SELECT COUNT(*) AS inActiveCustomer FROM customers WHERE account_status = ?";
+    const query = "SELECT COUNT(*) AS inActiveCustomer FROM customers WHERE LOWER(account_status) = ?";
     connection.query(query, ["inactive"], cbfn);
 };
 
@@ -26,12 +26,12 @@ const addCustomerModel = (data, cbfn) => {
 };
 
 const updateCustomerModel = (customer_id, data, cbfn) => {
-    const query = "update customers set customer_name = ? where customer_id = ?";
-    connection.query(query, [data, customer_id], cbfn)
+    const query = "UPDATE customers SET customer_name = ?, mobile_number = ?, city = ?, address = ? WHERE customer_id = ?";
+    connection.query(query, [data.customer_name, data.mobile_number, data.city || null, data.address || null, customer_id], cbfn)
 }
 
 const deleteCustomerModel = (customer_id, cbfn) => {
-    const query = "delete from customers where customer_id = ? ";
+    const query = "UPDATE customers SET account_status = 'inactive' WHERE customer_id = ?";
     connection.query(query, [customer_id], cbfn);
 }
 

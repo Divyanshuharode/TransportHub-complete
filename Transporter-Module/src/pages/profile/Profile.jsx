@@ -1,106 +1,23 @@
-import { User, Building2, Mail, Phone, MapPin, Truck, Edit } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Building2, Mail, MapPin, Phone, Save, Truck, User } from "lucide-react";
+import api from "../../services/api";
+import { getDriversApi, getTransporterBookingsApi } from "../../services/operations.service";
+import { getVehiclesApi } from "../../services/vehicles.service";
 
-const Profile = () => {
-    return (
-        <div className="space-y-3 p-1">
+const inputClass = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-blue-500";
 
-            <div>
-                <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-                {/* <p className="mt-1 text-sm text-gray-500">Manage your personal and business information.</p> */}
-            </div>
-
-            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-200 p-5">
-                    <div className="flex items-center gap-4">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                            <User size={32} />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold text-gray-900">Divyanshu Harode</h2>
-                            <p className="mt-1 text-sm text-gray-500">Transport Partner</p>
-                            <span className="mt-2 inline-block rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">
-                                Active Account
-                            </span>
-                        </div>
-                    </div>
-
-                    <button className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        <Edit size={16} /> Edit Profile
-                    </button>
-                </div>
-
-                <div className="p-5">
-                    <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-                        <User size={18} className="text-blue-600" /> Personal Information
-                    </h3>
-
-                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        <div>
-                            <p className="text-xs text-gray-500">Full Name</p>
-                            <p className="mt-1 text-sm font-medium text-gray-800">Divyanshu Harode</p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500">Email Address</p>
-                            <p className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-800">
-                                <Mail size={15} className="text-gray-400" /> divyanshu@example.com
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-xs text-gray-500">Phone Number</p>
-                            <p className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-800">
-                                <Phone size={15} className="text-gray-400" /> +91 98765 43210
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-                    <Building2 size={18} className="text-blue-600" /> Business Information
-                </h3>
-
-                <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                    <div>
-                        <p className="text-xs text-gray-500">Business Name</p>
-                        <p className="mt-1 text-sm font-medium text-gray-800">Harode Transport Services</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500">Transporter ID</p>
-                        <p className="mt-1 text-sm font-medium text-gray-800">TR-1001</p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-gray-500">Business Address</p>
-                        <p className="mt-1 flex items-center gap-2 text-sm font-medium text-gray-800">
-                            <MapPin size={15} className="text-gray-400" /> Bhopal, Madhya Pradesh
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-white p-5">
-                <h3 className="mb-4 flex items-center gap-2 font-semibold text-gray-900">
-                    <Truck size={18} className="text-blue-600" /> Transport Overview
-                </h3>
-
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div className="rounded-lg bg-gray-50 px-4 py-3">
-                        <p className="text-xs text-gray-500">Registered Vehicles</p>
-                        <p className="mt-1 text-xl font-bold text-gray-900">03</p>
-                    </div>
-                    <div className="rounded-lg bg-gray-50 px-4 py-3">
-                        <p className="text-xs text-gray-500">Registered Drivers</p>
-                        <p className="mt-1 text-xl font-bold text-gray-900">03</p>
-                    </div>
-                    <div className="rounded-lg bg-gray-50 px-4 py-3">
-                        <p className="text-xs text-gray-500">Total Bookings</p>
-                        <p className="mt-1 text-xl font-bold text-gray-900">24</p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    );
-};
-
-export default Profile;
+export default function Profile() {
+    const [profile, setProfile] = useState(null);
+    const [counts, setCounts] = useState({ vehicles: 0, drivers: 0, bookings: 0 });
+    const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    async function loadProfile() {
+        const [profileResult, vehiclesResult, driversResult, bookingsResult] = await Promise.all([api.get("/api/transporter/profile"), getVehiclesApi(), getDriversApi(), getTransporterBookingsApi()]);
+        setProfile(profileResult.data.data);
+        setCounts({ vehicles: vehiclesResult.data.data.length, drivers: driversResult.data.data.length, bookings: bookingsResult.data.data.length });
+    }
+    useEffect(() => { loadProfile().catch((requestError) => setError(requestError.response?.data?.message || "Could not load transporter profile.")); }, []);
+    async function save(event) { event.preventDefault(); const body = Object.fromEntries(new FormData(event.currentTarget)); try { const { data } = await api.patch("/api/transporter/profile", body); setProfile(data.data); setMessage("Profile saved."); setError(""); } catch (requestError) { setError(requestError.response?.data?.message || "Could not save profile."); setMessage(""); } }
+    if (!profile) return <div className="p-5 text-sm text-slate-500">Loading profile…</div>;
+    return <div className="space-y-4 p-1"><div><h1 className="text-2xl font-bold text-gray-900">My Profile</h1><p className="mt-1 text-sm text-slate-500">Update your contact and business information.</p></div>{error && <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}{message && <p className="rounded-lg bg-green-50 px-4 py-3 text-sm text-green-700">{message}</p>}<form onSubmit={save} className="overflow-hidden rounded-xl border border-slate-200 bg-white"><div className="flex items-center gap-4 border-b border-slate-100 p-5"><div className="grid h-14 w-14 place-items-center rounded-full bg-blue-50 text-blue-600"><User size={28}/></div><div><h2 className="text-lg font-bold">{profile.transporter_name}</h2><p className="text-sm text-slate-500">Transport partner · {profile.account_status}</p></div></div><div className="grid gap-4 p-5 sm:grid-cols-2"><label className="text-sm font-medium">Contact name<input className={inputClass} name="transporter_name" defaultValue={profile.transporter_name} required/></label><label className="text-sm font-medium">Email address<div className="relative"><Mail size={16} className="absolute left-3 top-4 text-slate-400"/><input className={`${inputClass} pl-9 bg-slate-50`} value={profile.email} readOnly/></div></label><label className="text-sm font-medium">Phone number<div className="relative"><Phone size={16} className="absolute left-3 top-4 text-slate-400"/><input className={`${inputClass} pl-9`} name="mobile_number" defaultValue={profile.mobile_number} required/></div></label><label className="text-sm font-medium">Business name<div className="relative"><Building2 size={16} className="absolute left-3 top-4 text-slate-400"/><input className={`${inputClass} pl-9`} name="business_name" defaultValue={profile.business_name || ""}/></div></label><label className="text-sm font-medium">City<input className={inputClass} name="city" defaultValue={profile.city || ""}/></label><label className="text-sm font-medium">Business address<div className="relative"><MapPin size={16} className="absolute left-3 top-4 text-slate-400"/><input className={`${inputClass} pl-9`} name="business_address" defaultValue={profile.business_address || ""}/></div></label></div><div className="flex justify-end border-t border-slate-100 p-4"><button className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white"><Save size={16}/> Save changes</button></div></form><div className="grid gap-3 sm:grid-cols-3">{[["Registered vehicles", counts.vehicles], ["Registered drivers", counts.drivers], ["Total bookings", counts.bookings]].map(([title, value]) => <div key={title} className="rounded-lg border border-slate-200 bg-white px-4 py-3"><p className="text-xs text-slate-500">{title}</p><p className="mt-1 flex items-center gap-2 text-xl font-bold text-slate-900"><Truck size={16} className="text-blue-600"/>{value.toString().padStart(2, "0")}</p></div>)}</div></div>;
+}

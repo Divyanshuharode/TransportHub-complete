@@ -15,6 +15,7 @@ import Reports from "../pages/reports/Reports";
 import Profile from '../pages/profile/Profile';
 import Document_verification from "../pages/document_verification/Document_verification";
 import Settings from "../pages/settings/Settings"
+import Reviews from "../pages/reviews/Reviews";
 import ProtectedRoute from "./ProtectedRoute"
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -47,6 +48,8 @@ function TransporterRoutes() {
                     <Route path='earnings_payments' element={<Earnings_Payments />}></Route>
 
                     <Route path='reports' element={<Reports />}></Route>
+
+                    <Route path='reviews' element={<Reviews />}></Route>
 
                     <Route path='profile' element={<Profile />}></Route>
 
