@@ -1,0 +1,74 @@
+const argon2 = require("argon2"); // hashing pass
+const jwt = require('jsonwebtoken'); //generate jwt token
+const generateUUID = require("../../../utility/uuid");
+
+const { registerTransporterModel, loginTransporterModel } = require("./auth.model");
+
+const registerTransporter = async (req, res, next) => {
+    try {
+        const transporter_id = generateUUID();
+        const hashPassword = await argon2.hash(req.body.password);
+        const data = [
+            transporter_id,
+            req.body.transporter_name,
+            req.body.email,
+            req.body.mobile_number,
+            hashPassword,
+        ];
+
+        registerTransporterModel(data, (err, result) => {
+            if (err) return next(err);
+
+            return res.status(201).json({ success: true, message: "Registration successful", data: { transporter_id, ...result } });
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+const loginTransporter = async (req, res, next) => {
+    const { email, password } = req.body;
+    try {
+        loginTransporterModel(email, async (err, data) => {
+            if (err) return next(err);
+
+            if (!data || data.length === 0) {
+                return res.status(401).send({ success: false, message: "Invalid email or password", data: null, });
+            }
+
+            const passwordMatches = await argon2.verify(data[0].password, password);
+
+            if (!passwordMatches) {
+                return res.status(401).send({ success: false, message: "Invalid email or password", data: null, });
+            }
+            const { transporter_id, role, account_status } = data[0];
+            // console.log(transporter_id, role, account_status);
+            if (account_status !== "ACTIVE") {
+                return res.status(403).send({ success: false, message: "Your account is not active", data: null });
+            }
+
+            const token = jwt.sign({ transporter_id, role, account_status }, process.env.JWT_SECRET, { expiresIn: "1m" });
+
+            res.cookie("token", token, {
+                httpOnly: true, //frontend JavaScript cookie ko access nahi kar sakta.(XSS attack)
+                sameSite: "lax",  //Normal navigation mein limited cross-site cookie support
+                path: "/" //cookie website ke sabhi paths par available hog
+            });
+
+            return res.status(200).send({
+                success: true, message: "Login successful",
+                data: {
+                    transporter_id,
+                    role,
+                    account_status,
+                    email: data[0].email
+                }
+            });
+            // return res.send({ success: true, message: "Login successful", data: data[0], token: token });
+        });
+    } catch (err) {
+        return next(err);
+    }
+};
+
+module.exports = { registerTransporter, loginTransporter };

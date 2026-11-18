@@ -1,0 +1,12 @@
+import { useEffect, useState } from "react";
+
+const defaults = { bookingAlerts: true, paymentAlerts: true, weeklySummary: false, publicProfile: true };
+
+export default function Settings() {
+    const [settings, setSettings] = useState(() => ({ ...defaults, ...JSON.parse(localStorage.getItem("transporthub.transporter.settings") || "{}") }));
+    const [saved, setSaved] = useState(false);
+    useEffect(() => { localStorage.setItem("transporthub.transporter.settings", JSON.stringify(settings)); }, [settings]);
+    function toggle(key) { setSettings((current) => ({ ...current, [key]: !current[key] })); setSaved(false); }
+    const rows = [["bookingAlerts", "New booking requests", "Get notified when a customer requests a vehicle."], ["paymentAlerts", "Payment updates", "Receive updates when trip payments are processed."], ["weeklySummary", "Weekly performance summary", "A weekly summary of completed trips and earnings."], ["publicProfile", "Show business profile to customers", "Let customers see your business profile when browsing transport." ]];
+    return <div className="max-w-3xl space-y-5 p-1"><div><p className="text-xs font-semibold uppercase tracking-wider text-blue-600">Account</p><h1 className="mt-1 text-2xl font-bold text-slate-900">Settings</h1><p className="mt-1 text-sm text-slate-500">Choose which updates you want to receive.</p></div><section className="overflow-hidden rounded-xl border border-slate-200 bg-white"><div className="border-b border-slate-100 p-5"><h2 className="font-semibold">Notifications & visibility</h2></div>{rows.map(([key, title, description]) => <div key={key} className="flex items-center justify-between gap-4 border-b border-slate-100 p-5 last:border-0"><div><h3 className="text-sm font-medium text-slate-800">{title}</h3><p className="mt-1 text-xs text-slate-500">{description}</p></div><button type="button" role="switch" aria-checked={settings[key]} onClick={() => toggle(key)} className={`relative h-6 w-11 shrink-0 rounded-full transition ${settings[key] ? "bg-blue-600" : "bg-slate-300"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${settings[key] ? "left-6" : "left-1"}`}/></button></div>)}</section><div className="flex items-center gap-3"><button onClick={() => setSaved(true)} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white">Save settings</button>{saved && <span className="text-sm text-emerald-700">Settings saved.</span>}</div></div>;
+}
