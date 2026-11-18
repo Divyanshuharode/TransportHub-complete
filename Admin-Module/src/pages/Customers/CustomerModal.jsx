@@ -1,48 +1,13 @@
+import { useEffect, useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 
-export default function CustomerAddModal({ open, setOpen, name, setName, email, setEmail, phone, setPhone, addCustomer, }) {
-    return (
-        <Dialog open={open} onClose={setOpen} className="relative z-50">
-            <DialogBackdrop className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm" />
-
-            <div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-4">
-                <DialogPanel className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-                    <DialogTitle className="text-xl font-semibold text-slate-900">
-                        Add new customer
-                    </DialogTitle>
-
-                    <p className="mt-1 text-sm text-slate-500">
-                        Enter the customer details.
-                    </p>
-
-                    <div className="mt-5 space-y-4">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Customer name</label>
-                            <input type="text" placeholder="Enter customer name" value={name || ""} onChange={(e) => setName(e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
-                        </div>
-
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
-                            <input type="email" placeholder="Enter email" value={email || ""} onChange={(e) => setEmail(e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
-                        </div>
-
-                        <div>
-                            <label className="mb-1.5 block text-sm font-medium text-slate-700">Mobile number</label>
-                            <input type="text" placeholder="Enter mobile number" value={phone || ""} onChange={(e) => setPhone(e.target.value)} className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
-                        </div>
-                    </div>
-
-                    <div className="mt-6 flex justify-end gap-3">
-                        <button onClick={() => setOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                            Cancel
-                        </button>
-
-                        <button onClick={addCustomer} className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                            Save customer
-                        </button>
-                    </div>
-                </DialogPanel>
-            </div>
-        </Dialog>
-    );
+export default function CustomerModal({ open, setOpen, customer, mode, onSave }) {
+    const [form, setForm] = useState({ customer_name: "", email: "", mobile_number: "", city: "", address: "" });
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
+    useEffect(() => { setForm({ customer_name: customer?.customer_name || "", email: customer?.email || "", mobile_number: customer?.mobile_number || "", city: customer?.city || "", address: customer?.address || "" }); setError(""); }, [customer, open]);
+    const viewOnly = mode === "view";
+    const submit = async (event) => { event.preventDefault(); if (viewOnly) return; setSaving(true); setError(""); try { await onSave(form); setOpen(false); } catch (err) { setError(err.response?.data?.message || "Customer save nahi ho paya."); } finally { setSaving(false); } };
+    return <Dialog open={open} onClose={setOpen} className="relative z-50"><DialogBackdrop className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"/><div className="fixed inset-0 flex items-center justify-center overflow-y-auto p-4"><DialogPanel className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"><div className="bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-5 text-white"><DialogTitle className="text-xl font-bold">{mode === "add" ? "Add customer" : mode === "edit" ? "Edit customer" : "Customer details"}</DialogTitle><p className="mt-1 text-sm text-blue-100">Customer contact information and account details.</p></div><form onSubmit={submit} className="p-6"><div className="grid gap-4 sm:grid-cols-2">{[["customer_name","Customer name","text"],["email","Email address","email"],["mobile_number","Mobile number","tel"],["city","City","text"]].map(([key,label,type])=><label key={key} className="block text-sm font-medium text-slate-700">{label}<input type={type} required={key !== "city"} disabled={viewOnly || (mode === "edit" && key === "email")} value={form[key]} onChange={(e)=>setForm({...form,[key]:e.target.value})} className="mt-1.5 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50 disabled:text-slate-500"/></label>)}</div><label className="mt-4 block text-sm font-medium text-slate-700">Address<textarea rows="3" disabled={viewOnly} value={form.address} onChange={(e)=>setForm({...form,address:e.target.value})} className="mt-1.5 w-full resize-y rounded-xl border border-slate-200 px-3.5 py-2.5 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50"/></label>{customer && <div className="mt-4 flex items-center gap-2 text-sm text-slate-500">Account status <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold capitalize text-emerald-700">{customer.account_status || "Active"}</span></div>}{error && <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}<div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" onClick={()=>setOpen(false)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600">{viewOnly ? "Close" : "Cancel"}</button>{!viewOnly && <button disabled={saving} className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60">{saving ? "Saving…" : mode === "add" ? "Add customer" : "Save changes"}</button>}</div></form></DialogPanel></div></Dialog>;
 }
+
