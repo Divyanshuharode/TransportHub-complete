@@ -10,6 +10,7 @@ import {
     FaClipboardList,
     FaStar,
     FaCog,
+    FaFileAlt,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -138,6 +139,10 @@ function Sidebar() {
                             <FaStar className="w-4 text-base" />
                             <span>Reviews</span>
                         </NavLink>
+                        <NavLink to="/admin/documents" className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${isActive ? "bg-blue-600 text-white shadow-md shadow-blue-950/30" : "text-slate-300 hover:bg-slate-800 hover:text-white"}`}>
+                            <FaFileAlt className="w-4 text-base" />
+                            <span>Documents</span>
+                        </NavLink>
                     </div>
                 </div>
                 <div>
@@ -162,3 +167,4 @@ function Sidebar() {
 }
 
 export default Sidebar;
+
